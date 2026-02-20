@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import Combine
 
 struct ChatViewModelDependencies {
     let readAPIKey: (String) -> String?
@@ -9,7 +10,7 @@ struct ChatViewModelDependencies {
     let stream: ([GPTMessage], String, String) -> AsyncThrowingStream<String, Error>
     let captureScreen: () async -> Data?
 
-    static let live = ChatViewModelDependencies(
+    nonisolated(unsafe) static let live = ChatViewModelDependencies(
         readAPIKey: { key in
             KeychainHelper.read(key: key)
         },
@@ -31,21 +32,21 @@ struct ChatViewModelDependencies {
     )
 }
 
-@Observable
-final class ChatViewModel {
+@MainActor
+final class ChatViewModel: ObservableObject {
 
-    var queryText: String = ""
-    var responseText: String = ""
-    var isStreaming: Bool = false
-    var errorMessage: String?
+    @Published var queryText: String = ""
+    @Published var responseText: String = ""
+    @Published var isStreaming: Bool = false
+    @Published var errorMessage: String?
     var hasResponse: Bool { !responseText.isEmpty || isStreaming }
 
-    var selectedModel: GPTModel {
+    @Published var selectedModel: GPTModel {
         didSet { dependencies.writeSetting(selectedModel.rawValue, "gpt_model") }
     }
 
-    @ObservationIgnored private var streamTask: Task<Void, Never>?
-    @ObservationIgnored private let dependencies: ChatViewModelDependencies
+    private var streamTask: Task<Void, Never>?
+    private let dependencies: ChatViewModelDependencies
 
     init(dependencies: ChatViewModelDependencies = .live) {
         self.dependencies = dependencies

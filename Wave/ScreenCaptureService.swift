@@ -2,7 +2,7 @@ import Foundation
 import AppKit
 import ScreenCaptureKit
 
-final class ScreenCaptureService {
+final class ScreenCaptureService: @unchecked Sendable {
     static let shared = ScreenCaptureService()
     private init() {}
 

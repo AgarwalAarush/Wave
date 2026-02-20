@@ -1,5 +1,5 @@
 import XCTest
-@testable import Wave
+@testable import WaveCore
 
 final class ChatViewModelTests: XCTestCase {
     @MainActor

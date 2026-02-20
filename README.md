@@ -72,7 +72,16 @@ Current model options in code:
 xcodebuild -project Wave.xcodeproj -scheme Wave -configuration Debug -derivedDataPath ./.derivedData build
 ```
 
+## Testing
+
+Run the core unit tests (model parsing, request/stream parsing, and view-model behavior):
+
+```bash
+swift test
+```
+
+The Swift package test target (`WaveCore`) compiles the core non-UI files under `Wave/` and runs tests from `Tests/WaveCoreTests/`.
+
 ## Notes
 
-- This repo currently has no test target.
 - OpenAI model IDs and availability may change over time.

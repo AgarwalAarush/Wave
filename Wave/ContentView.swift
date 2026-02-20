@@ -12,7 +12,7 @@ extension EnvironmentValues {
 }
 
 struct ContentView: View {
-    @Bindable var viewModel: ChatViewModel
+    @ObservedObject var viewModel: ChatViewModel
     @Environment(\.dismissPanel) private var dismissPanel
     @FocusState private var inputFocused: Bool
     @State private var showModelPicker = false
