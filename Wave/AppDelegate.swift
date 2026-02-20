@@ -24,6 +24,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let hosting = NSHostingView(rootView: rootView)
         hosting.sizingOptions = [.minSize, .maxSize, .intrinsicContentSize]
+        hosting.wantsLayer = true
+        hosting.layer?.backgroundColor = .clear
         panel.contentView = hosting
         panel.positionAtTopCenter()
     }

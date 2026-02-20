@@ -73,6 +73,31 @@ extension Color {
         light: Color(hex: 0xEBE9E4),
         dark: Color(hex: 0x3A3732)
     )
+
+    static let waveAccent = Color(
+        light: Color(hex: 0x2AA198),
+        dark: Color(hex: 0x5DD6C8)
+    )
+
+    static let waveSettingsBackground = Color(
+        light: Color(hex: 0xF5F5F5),
+        dark: Color(hex: 0x1E1E1E)
+    )
+
+    static let waveSettingsSidebar = Color(
+        light: Color(hex: 0xE8E8E8),
+        dark: Color(hex: 0x2A2A2A)
+    )
+
+    static let waveSettingsCard = Color(
+        light: Color(hex: 0xFFFFFF),
+        dark: Color(hex: 0x2F2F2F)
+    )
+
+    static let waveSettingsRowHover = Color(
+        light: Color(hex: 0x2AA198).opacity(0.1),
+        dark: Color(hex: 0x5DD6C8).opacity(0.15)
+    )
 }
 
 // MARK: - Hex Initializer
