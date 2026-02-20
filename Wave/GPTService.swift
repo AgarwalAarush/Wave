@@ -88,7 +88,7 @@ final class GPTService: @unchecked Sendable {
             "model": model,
             "messages": jsonMessages,
             "stream": true,
-            "max_tokens": 4096
+            "max_completion_tokens": 4096
         ]
 
         var request = URLRequest(url: baseURL)

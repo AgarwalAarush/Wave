@@ -212,10 +212,11 @@ struct ContentView: View {
                             ProgressView()
                                 .controlSize(.small)
                             Text("Thinking...")
-                                .font(.system(size: 12))
+                                .font(.system(size: 13))
                                 .foregroundStyle(Color.waveTextSecondary)
                         }
                         .padding(.horizontal, 16)
+                        .padding(.top, 8)
                         .opacity(viewModel.responseText.isEmpty ? 1 : 0)
                     }
 
@@ -223,7 +224,7 @@ struct ContentView: View {
                         .frame(height: 1)
                         .id("bottom")
                 }
-                .padding(.bottom, 12)
+                .padding(.bottom, 8)
             }
             .onChange(of: viewModel.responseText) {
                 withAnimation(.easeOut(duration: 0.1)) {
