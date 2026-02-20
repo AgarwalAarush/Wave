@@ -48,10 +48,11 @@ final class ChatViewModel: ObservableObject {
     private var streamTask: Task<Void, Never>?
     private let dependencies: ChatViewModelDependencies
 
-    init(dependencies: ChatViewModelDependencies = .live) {
-        self.dependencies = dependencies
+    init(dependencies: ChatViewModelDependencies? = nil) {
+        let resolved = dependencies ?? .live
+        self.dependencies = resolved
 
-        let stored = dependencies.readSettingString("gpt_model")
+        let stored = resolved.readSettingString("gpt_model")
         self.selectedModel = GPTModel.from(rawValue: stored)
     }
 

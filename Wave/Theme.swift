@@ -98,6 +98,58 @@ extension Color {
         light: Color(hex: 0x2AA198).opacity(0.1),
         dark: Color(hex: 0x5DD6C8).opacity(0.15)
     )
+
+    // MARK: - Code Block Colors
+
+    static let waveCodeBackground = Color(
+        light: Color(hex: 0x1E1E1E),
+        dark: Color(hex: 0x1E1E1E)
+    )
+
+    static let waveCodeHeader = Color(
+        light: Color(hex: 0x2D2D2D),
+        dark: Color(hex: 0x2D2D2D)
+    )
+
+    static let waveCodeText = Color(
+        light: Color(hex: 0xD4D4D4),
+        dark: Color(hex: 0xD4D4D4)
+    )
+
+    static let waveCodeKeyword = Color(
+        light: Color(hex: 0xC586C0),
+        dark: Color(hex: 0xC586C0)
+    )
+
+    static let waveCodeString = Color(
+        light: Color(hex: 0xCE9178),
+        dark: Color(hex: 0xCE9178)
+    )
+
+    static let waveCodeComment = Color(
+        light: Color(hex: 0x6A9955),
+        dark: Color(hex: 0x6A9955)
+    )
+
+    static let waveCodeNumber = Color(
+        light: Color(hex: 0xB5CEA8),
+        dark: Color(hex: 0xB5CEA8)
+    )
+
+    static let waveCodeType = Color(
+        light: Color(hex: 0x4EC9B0),
+        dark: Color(hex: 0x4EC9B0)
+    )
+
+    static let waveCodeFunction = Color(
+        light: Color(hex: 0xDCDCAA),
+        dark: Color(hex: 0xDCDCAA)
+    )
+
+    static let waveCodePreprocessor = Color(
+        light: Color(hex: 0x9CDCFE),
+        dark: Color(hex: 0x9CDCFE)
+    )
 }
 
 // MARK: - Hex Initializer

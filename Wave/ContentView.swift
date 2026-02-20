@@ -199,10 +199,7 @@ struct ContentView: View {
                     }
 
                     if !viewModel.responseText.isEmpty {
-                        Text(markdownAttributedString(viewModel.responseText))
-                            .font(.system(size: 14))
-                            .foregroundStyle(Color.waveTextPrimary)
-                            .textSelection(.enabled)
+                        MarkdownContentView(text: viewModel.responseText)
                             .padding(.horizontal, 16)
                             .padding(.top, viewModel.errorMessage == nil ? 8 : 0)
                     }
@@ -235,11 +232,4 @@ struct ContentView: View {
         .frame(maxHeight: 460)
     }
 
-    // MARK: - Markdown
-
-    private func markdownAttributedString(_ text: String) -> AttributedString {
-        (try? AttributedString(markdown: text, options: .init(
-            interpretedSyntax: .inlineOnlyPreservingWhitespace
-        ))) ?? AttributedString(text)
-    }
 }
