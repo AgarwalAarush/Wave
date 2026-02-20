@@ -7,7 +7,7 @@ struct ChatViewModelDependencies {
     let readSettingString: (String) -> String?
     let readSettingObject: (String) -> Any?
     let writeSetting: (Any?, String) -> Void
-    let stream: ([GPTMessage], String, String) -> AsyncThrowingStream<String, Error>
+    let stream: ([GPTMessage], String, String, AIProvider) -> AsyncThrowingStream<String, Error>
     let captureScreen: () async -> Data?
 
     nonisolated(unsafe) static let live = ChatViewModelDependencies(
@@ -23,8 +23,13 @@ struct ChatViewModelDependencies {
         writeSetting: { value, key in
             UserDefaults.standard.set(value, forKey: key)
         },
-        stream: { messages, model, apiKey in
-            GPTService.shared.stream(messages: messages, model: model, apiKey: apiKey)
+        stream: { messages, model, apiKey, provider in
+            switch provider {
+            case .openai:
+                GPTService.shared.stream(messages: messages, model: model, apiKey: apiKey)
+            case .anthropic:
+                AnthropicService.shared.stream(messages: messages, model: model, apiKey: apiKey)
+            }
         },
         captureScreen: {
             await ScreenCaptureService.shared.captureFullScreen()
@@ -41,8 +46,8 @@ final class ChatViewModel: ObservableObject {
     @Published var errorMessage: String?
     var hasResponse: Bool { !responseText.isEmpty || isStreaming }
 
-    @Published var selectedModel: GPTModel {
-        didSet { dependencies.writeSetting(selectedModel.rawValue, "gpt_model") }
+    @Published var selectedModel: AIModel {
+        didSet { dependencies.writeSetting(selectedModel.rawValue, "ai_model") }
     }
 
     private var streamTask: Task<Void, Never>?
@@ -52,8 +57,8 @@ final class ChatViewModel: ObservableObject {
         let resolved = dependencies ?? .live
         self.dependencies = resolved
 
-        let stored = resolved.readSettingString("gpt_model")
-        self.selectedModel = GPTModel.from(rawValue: stored)
+        let stored = resolved.readSettingString("ai_model")
+        self.selectedModel = AIModel.fromStored(stored)
     }
 
     // MARK: - Actions
@@ -62,8 +67,10 @@ final class ChatViewModel: ObservableObject {
         let query = queryText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty, !isStreaming else { return }
 
-        guard let apiKey = dependencies.readAPIKey("openai_api_key"), !apiKey.isEmpty else {
-            errorMessage = "No API key configured. Open Settings (Cmd+,) to add your OpenAI key."
+        let keyName = selectedModel.provider.apiKeyKey
+        guard let apiKey = dependencies.readAPIKey(keyName), !apiKey.isEmpty else {
+            let providerName = selectedModel.provider.rawValue
+            errorMessage = "No API key configured. Open Settings (Cmd+,) to add your \(providerName) key."
             return
         }
 
@@ -94,7 +101,7 @@ final class ChatViewModel: ObservableObject {
             ]
 
             do {
-                let stream = dependencies.stream(messages, model, apiKey)
+                let stream = dependencies.stream(messages, model, apiKey, selectedModel.provider)
                 for try await chunk in stream {
                     self.responseText += chunk
                 }

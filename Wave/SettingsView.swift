@@ -2,14 +2,12 @@ import SwiftUI
 
 enum SettingsTab: String, CaseIterable {
     case general = "General"
-    case model = "Model"
     case context = "Context"
     case shortcuts = "Shortcuts"
 
     var icon: String {
         switch self {
         case .general: return "gearshape.fill"
-        case .model: return "cpu.fill"
         case .context: return "eye.fill"
         case .shortcuts: return "keyboard.fill"
         }
@@ -17,8 +15,7 @@ enum SettingsTab: String, CaseIterable {
 
     var subtitle: String {
         switch self {
-        case .general: return "API keys and account"
-        case .model: return "Choose your AI model"
+        case .general: return "API keys, model, and account"
         case .context: return "Screen capture behavior"
         case .shortcuts: return "Keyboard shortcuts"
         }
@@ -31,6 +28,9 @@ struct SettingsView: View {
     var body: some View {
         HStack(spacing: 0) {
             SidebarView(selectedTab: $selectedTab)
+            Color.waveBorder
+                .frame(width: 1)
+                .ignoresSafeArea(edges: .vertical)
             DetailView(selectedTab: selectedTab)
         }
         .frame(minWidth: 620, minHeight: 460)
@@ -128,8 +128,6 @@ struct DetailView: View {
                 switch selectedTab {
                 case .general:
                     GeneralSettingsView()
-                case .model:
-                    ModelSettingsView()
                 case .context:
                     ContextSettingsView()
                 case .shortcuts:
