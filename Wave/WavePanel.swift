@@ -5,7 +5,7 @@ final class WavePanel: NSPanel {
     init() {
         super.init(
             contentRect: NSRect(x: 0, y: 0, width: 560, height: 52),
-            styleMask: [.nonactivatingPanel, .titled, .fullSizeContentView],
+            styleMask: [.nonactivatingPanel, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
@@ -14,16 +14,11 @@ final class WavePanel: NSPanel {
         level = .floating
         isOpaque = false
         backgroundColor = .clear
-        hasShadow = true
-        titleVisibility = .hidden
-        titlebarAppearsTransparent = true
+        hasShadow = false
         isMovableByWindowBackground = false
         isReleasedWhenClosed = false
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        appearance = NSAppearance(named: .darkAqua)
         animationBehavior = .utilityWindow
-
-        hideStandardButtons()
     }
 
     override var canBecomeKey: Bool { true }
@@ -36,11 +31,5 @@ final class WavePanel: NSPanel {
         let x = screenFrame.origin.x + (screenFrame.width - panelWidth) / 2
         let y = screenFrame.origin.y + screenFrame.height - frame.height - 8
         setFrameOrigin(NSPoint(x: x, y: y))
-    }
-
-    private func hideStandardButtons() {
-        standardWindowButton(.closeButton)?.isHidden = true
-        standardWindowButton(.miniaturizeButton)?.isHidden = true
-        standardWindowButton(.zoomButton)?.isHidden = true
     }
 }

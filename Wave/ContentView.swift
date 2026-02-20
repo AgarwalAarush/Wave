@@ -20,20 +20,20 @@ struct ContentView: View {
         VStack(spacing: 0) {
             queryBar
             if viewModel.hasResponse || viewModel.errorMessage != nil {
-                Divider().opacity(0.3)
+                Color.waveDivider.frame(height: 1)
                 responseArea
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
         .frame(width: 560)
         .fixedSize(horizontal: true, vertical: true)
-        .background(.ultraThinMaterial)
+        .background(Color.wavePanelBackground)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(.white.opacity(0.1), lineWidth: 0.5)
+                .strokeBorder(Color.waveBorder, lineWidth: 0.5)
         )
-        .shadow(color: .black.opacity(0.4), radius: 20, y: 8)
+        .shadow(color: Color.waveShadow, radius: 20, y: 8)
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: viewModel.hasResponse)
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: viewModel.errorMessage != nil)
         .onAppear { inputFocused = true }
@@ -47,7 +47,6 @@ struct ContentView: View {
             inputFocused = true
             return .handled
         }
-        .preferredColorScheme(.dark)
     }
 
     // MARK: - Query Bar
@@ -56,11 +55,12 @@ struct ContentView: View {
         HStack(spacing: 10) {
             Image(systemName: "camera.viewfinder")
                 .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.waveIcon)
 
             TextField("Ask anything...", text: $viewModel.queryText)
                 .textFieldStyle(.plain)
                 .font(.system(size: 15))
+                .foregroundStyle(Color.waveTextPrimary)
                 .focused($inputFocused)
                 .onSubmit { viewModel.submit() }
 
@@ -68,13 +68,13 @@ struct ContentView: View {
                 Button { viewModel.stopStreaming() } label: {
                     Image(systemName: "stop.circle.fill")
                         .font(.system(size: 16))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.waveIcon)
                 }
                 .buttonStyle(.plain)
             } else {
                 Text("**\u{2318}`**")
                     .font(.system(size: 11))
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(Color.waveHint)
             }
         }
         .padding(.horizontal, 16)
@@ -90,7 +90,7 @@ struct ContentView: View {
                     if let error = viewModel.errorMessage {
                         Label(error, systemImage: "exclamationmark.triangle.fill")
                             .font(.system(size: 13))
-                            .foregroundStyle(.red)
+                            .foregroundStyle(Color.waveError)
                             .padding(.horizontal, 16)
                             .padding(.top, 8)
                     }
@@ -98,6 +98,7 @@ struct ContentView: View {
                     if !viewModel.responseText.isEmpty {
                         Text(markdownAttributedString(viewModel.responseText))
                             .font(.system(size: 14))
+                            .foregroundStyle(Color.waveTextPrimary)
                             .textSelection(.enabled)
                             .padding(.horizontal, 16)
                             .padding(.top, viewModel.errorMessage == nil ? 8 : 0)
@@ -109,7 +110,7 @@ struct ContentView: View {
                                 .controlSize(.small)
                             Text("Thinking...")
                                 .font(.system(size: 12))
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color.waveTextSecondary)
                         }
                         .padding(.horizontal, 16)
                         .opacity(viewModel.responseText.isEmpty ? 1 : 0)
