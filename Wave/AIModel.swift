@@ -12,6 +12,13 @@ enum AIProvider: String, CaseIterable, Identifiable {
         case .anthropic: return "anthropic_api_key"
         }
     }
+
+    var brandAssetName: String {
+        switch self {
+        case .openai: return "ChatGPT"
+        case .anthropic: return "Claude"
+        }
+    }
 }
 
 enum AIModel: String, CaseIterable, Identifiable, Sendable {

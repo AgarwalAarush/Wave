@@ -78,7 +78,8 @@ struct ContentView: View {
         }
         .onKeyPress(.downArrow) {
             guard showModelPicker else { return .ignored }
-            let models = AIModel.models(for: viewModel.selectedModel.provider)
+            let models = dropdownModels
+            guard !models.isEmpty else { return .handled }
             highlightedModelIndex = min(models.count - 1, highlightedModelIndex + 1)
             return .handled
         }
@@ -141,37 +142,62 @@ struct ContentView: View {
 
     // MARK: - Model Dropdown
 
+    private var dropdownProviders: [AIProvider] {
+        [.openai, .anthropic]
+    }
+
+    private var dropdownModels: [AIModel] {
+        dropdownProviders.flatMap { AIModel.models(for: $0) }
+    }
+
     private var modelDropdown: some View {
-        let models = AIModel.models(for: viewModel.selectedModel.provider)
         return VStack(spacing: 0) {
             Color.waveDivider.frame(height: 1)
-            VStack(alignment: .leading, spacing: 2) {
-                ForEach(Array(models.enumerated()), id: \.element.id) { index, model in
-                    Button {
-                        viewModel.selectedModel = model
-                        showModelPicker = false
-                    } label: {
-                        HStack {
-                            Text(model.displayName)
-                                .font(.waveSystem(size: 13, weight: .medium, design: .rounded))
-                                .foregroundStyle(Color.waveTextPrimary)
-                            Spacer()
-                            if model == viewModel.selectedModel {
-                                Image(systemName: "checkmark")
-                                    .font(.waveSystem(size: 10, weight: .semibold))
-                                    .foregroundStyle(Color.waveTextSecondary)
-                            }
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 7)
-                        .background(
-                            index == highlightedModelIndex
-                                ? Color.waveModelHighlight
-                                : Color.clear,
-                            in: RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        )
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(dropdownProviders) { provider in
+                    HStack(spacing: 6) {
+                        Image(provider.brandAssetName)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 12, height: 12)
+
+                        Text(provider.rawValue)
+                            .font(.waveSystem(size: 11, weight: .semibold))
+                            .foregroundStyle(Color.waveTextSecondary)
+
+                        Spacer()
                     }
-                    .buttonStyle(.plain)
+                    .padding(.horizontal, 12)
+                    .padding(.top, 4)
+
+                    ForEach(AIModel.models(for: provider), id: \.id) { model in
+                        let globalIndex = dropdownModels.firstIndex(of: model) ?? 0
+                        Button {
+                            viewModel.selectedModel = model
+                            showModelPicker = false
+                        } label: {
+                            HStack {
+                                Text(model.displayName)
+                                    .font(.waveSystem(size: 13, weight: .medium, design: .rounded))
+                                    .foregroundStyle(Color.waveTextPrimary)
+                                Spacer()
+                                if model == viewModel.selectedModel {
+                                    Image(systemName: "checkmark")
+                                        .font(.waveSystem(size: 10, weight: .semibold))
+                                        .foregroundStyle(Color.waveTextSecondary)
+                                }
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .background(
+                                globalIndex == highlightedModelIndex
+                                    ? Color.waveModelHighlight
+                                    : Color.clear,
+                                in: RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
             }
             .padding(.horizontal, 8)
@@ -186,7 +212,7 @@ struct ContentView: View {
             if showModelPicker {
                 showModelPicker = false
             } else {
-                let models = AIModel.models(for: viewModel.selectedModel.provider)
+                let models = dropdownModels
                 highlightedModelIndex = models.firstIndex(of: viewModel.selectedModel) ?? 0
                 showModelPicker = true
             }
@@ -194,7 +220,7 @@ struct ContentView: View {
     }
 
     private func selectHighlightedModel() {
-        let models = AIModel.models(for: viewModel.selectedModel.provider)
+        let models = dropdownModels
         guard highlightedModelIndex >= 0, highlightedModelIndex < models.count else { return }
         viewModel.selectedModel = models[highlightedModelIndex]
         withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
