@@ -23,7 +23,6 @@ struct ContentView: View {
             queryBar
             if showModelPicker {
                 modelDropdown
-                    .transition(.opacity.combined(with: .move(edge: .top)))
             }
             if viewModel.hasResponse || viewModel.errorMessage != nil {
                 Color.waveDivider.frame(height: 1)
@@ -108,10 +107,6 @@ struct ContentView: View {
                         .foregroundStyle(Color.waveIcon)
                 }
                 .buttonStyle(.plain)
-            } else {
-                Text("**\u{2318}`**")
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color.waveHint)
             }
         }
         .padding(.horizontal, 16)
