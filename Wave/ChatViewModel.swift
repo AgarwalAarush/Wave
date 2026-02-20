@@ -50,6 +50,9 @@ final class ChatViewModel: ObservableObject {
         didSet { dependencies.writeSetting(selectedModel.rawValue, "ai_model") }
     }
 
+    @Published var pendingScreenshot: Data?
+    @Published var hasManualScreenshot: Bool = false
+
     private var streamTask: Task<Void, Never>?
     private let dependencies: ChatViewModelDependencies
 
@@ -81,10 +84,16 @@ final class ChatViewModel: ObservableObject {
 
         let model = selectedModel.rawValue
         let screenshotEnabled = dependencies.readSettingObject("screenshot_enabled") as? Bool ?? true
+        let manualScreenshot = pendingScreenshot
+
+        pendingScreenshot = nil
+        hasManualScreenshot = false
 
         streamTask = Task {
             var screenshotData: Data?
-            if screenshotEnabled {
+            if let manual = manualScreenshot {
+                screenshotData = manual
+            } else if screenshotEnabled {
                 screenshotData = await dependencies.captureScreen()
             }
 
@@ -127,5 +136,17 @@ final class ChatViewModel: ObservableObject {
         queryText = ""
         responseText = ""
         errorMessage = nil
+        pendingScreenshot = nil
+        hasManualScreenshot = false
+    }
+
+    func attachScreenshot(_ data: Data) {
+        pendingScreenshot = data
+        hasManualScreenshot = true
+    }
+
+    func removeScreenshot() {
+        pendingScreenshot = nil
+        hasManualScreenshot = false
     }
 }

@@ -73,16 +73,29 @@ struct ContentView: View {
     @State private var settingsFilterText = ""
     @State private var highlightedSettingIndex = 0
 
+    // Screenshot palette state
+    @State private var showScreenshotPalette = false
+    @State private var highlightedScreenshotIndex = 0
+    @State private var screenshotTargets: [CaptureTarget] = []
+
     var body: some View {
         VStack(spacing: 0) {
             queryBar
             if showModelPicker {
                 modelDropdown
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .transition(PaletteStyle.transition)
             }
             if showSettingsPalette {
                 settingsPaletteDropdown
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .transition(PaletteStyle.transition)
+            }
+            if showScreenshotPalette {
+                ScreenshotPalette(
+                    targets: screenshotTargets,
+                    highlightedIndex: highlightedScreenshotIndex,
+                    onSelect: { target in selectScreenshotTarget(target) }
+                )
+                .transition(PaletteStyle.transition)
             }
             if viewModel.hasResponse || viewModel.errorMessage != nil {
                 Color.waveDivider.frame(height: 1)
@@ -103,8 +116,14 @@ struct ContentView: View {
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: viewModel.errorMessage != nil)
         .onAppear { inputFocused = true }
         .onKeyPress(.escape) {
+            if showScreenshotPalette {
+                withAnimation(PaletteStyle.animation) {
+                    showScreenshotPalette = false
+                }
+                return .handled
+            }
             if showSettingsPalette {
-                withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
+                withAnimation(PaletteStyle.animation) {
                     if case .settingOptions = settingsPaletteLevel {
                         settingsPaletteLevel = .settingsList
                         highlightedSettingIndex = 0
@@ -116,7 +135,7 @@ struct ContentView: View {
                 return .handled
             }
             if showModelPicker {
-                withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
+                withAnimation(PaletteStyle.animation) {
                     showModelPicker = false
                 }
                 return .handled
@@ -149,7 +168,20 @@ struct ContentView: View {
             NSApp.sendAction(#selector(NSText.selectAll(_:)), to: nil, from: nil)
             return .handled
         }
+        .onKeyPress(characters: .init(charactersIn: "sS"), phases: .down) { press in
+            guard press.modifiers.contains(.command) else { return .ignored }
+            if press.modifiers.contains(.shift) {
+                toggleScreenshotPalette()
+            } else {
+                captureAndAttachFullScreen()
+            }
+            return .handled
+        }
         .onKeyPress(.upArrow) {
+            if showScreenshotPalette {
+                highlightedScreenshotIndex = max(0, highlightedScreenshotIndex - 1)
+                return .handled
+            }
             if showSettingsPalette {
                 highlightedSettingIndex = max(0, highlightedSettingIndex - 1)
                 return .handled
@@ -159,6 +191,11 @@ struct ContentView: View {
             return .handled
         }
         .onKeyPress(.downArrow) {
+            if showScreenshotPalette {
+                let maxIndex = screenshotTargets.count - 1
+                highlightedScreenshotIndex = min(max(0, maxIndex), highlightedScreenshotIndex + 1)
+                return .handled
+            }
             if showSettingsPalette {
                 let maxIndex = currentSettingsItemCount - 1
                 highlightedSettingIndex = min(max(0, maxIndex), highlightedSettingIndex + 1)
@@ -171,6 +208,10 @@ struct ContentView: View {
             return .handled
         }
         .onKeyPress(.return) {
+            if showScreenshotPalette {
+                selectHighlightedScreenshotTarget()
+                return .handled
+            }
             if showSettingsPalette {
                 selectHighlightedSetting()
                 return .handled
@@ -185,9 +226,13 @@ struct ContentView: View {
 
     private var queryBar: some View {
         HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "camera.viewfinder")
-                .font(.waveSystem(size: 14, weight: .medium))
-                .foregroundStyle(Color.waveIcon)
+            if viewModel.hasManualScreenshot {
+                screenshotIndicator
+            } else {
+                Image(systemName: "camera.viewfinder")
+                    .font(.waveSystem(size: 14, weight: .medium))
+                    .foregroundStyle(Color.waveIcon)
+            }
 
             TextField("Ask anything...", text: $viewModel.queryText, axis: .vertical)
                 .textFieldStyle(.plain)
@@ -299,7 +344,7 @@ struct ContentView: View {
     // MARK: - Model Picker Logic
 
     private func toggleModelPicker() {
-        withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
+        withAnimation(PaletteStyle.animation) {
             if showModelPicker {
                 showModelPicker = false
             } else {
@@ -314,7 +359,7 @@ struct ContentView: View {
         let models = dropdownModels
         guard highlightedModelIndex >= 0, highlightedModelIndex < models.count else { return }
         viewModel.selectedModel = models[highlightedModelIndex]
-        withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
+        withAnimation(PaletteStyle.animation) {
             showModelPicker = false
         }
     }
@@ -387,7 +432,7 @@ struct ContentView: View {
 
     private func settingRow(_ setting: SettingItem, highlighted: Bool) -> some View {
         Button {
-            withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
+            withAnimation(PaletteStyle.animation) {
                 settingsPaletteLevel = .settingOptions(setting)
                 highlightedSettingIndex = 0
             }
@@ -442,7 +487,7 @@ struct ContentView: View {
     }
 
     private func toggleSettingsPalette() {
-        withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
+        withAnimation(PaletteStyle.animation) {
             if showSettingsPalette {
                 showSettingsPalette = false
                 settingsFilterText = ""
@@ -462,7 +507,7 @@ struct ContentView: View {
         case .settingsList:
             let settings = filteredSettings
             guard highlightedSettingIndex >= 0, highlightedSettingIndex < settings.count else { return }
-            withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
+            withAnimation(PaletteStyle.animation) {
                 settingsPaletteLevel = .settingOptions(settings[highlightedSettingIndex])
                 highlightedSettingIndex = 0
             }
@@ -481,10 +526,87 @@ struct ContentView: View {
             }
         }
 
-        withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
+        withAnimation(PaletteStyle.animation) {
             showSettingsPalette = false
             settingsPaletteLevel = .settingsList
             settingsFilterText = ""
+        }
+    }
+
+    // MARK: - Screenshot Palette
+
+    private var screenshotIndicator: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "photo.fill")
+                .font(.waveSystem(size: 12))
+                .foregroundStyle(Color.waveAccent)
+            Button {
+                viewModel.removeScreenshot()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.waveSystem(size: 12))
+                    .foregroundStyle(Color.waveTextSecondary)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(Color.waveAccent.opacity(0.15), in: Capsule())
+    }
+
+    private func toggleScreenshotPalette() {
+        if showScreenshotPalette {
+            withAnimation(PaletteStyle.animation) {
+                showScreenshotPalette = false
+            }
+        } else {
+            showModelPicker = false
+            showSettingsPalette = false
+            settingsFilterText = ""
+
+            screenshotTargets = []
+            highlightedScreenshotIndex = 0
+
+            withAnimation(PaletteStyle.animation) {
+                showScreenshotPalette = true
+            }
+
+            Task {
+                let targets = await ScreenCaptureService.shared.getAvailableTargets()
+                await MainActor.run {
+                    screenshotTargets = targets
+                }
+            }
+        }
+    }
+
+    private func selectHighlightedScreenshotTarget() {
+        guard highlightedScreenshotIndex >= 0,
+              highlightedScreenshotIndex < screenshotTargets.count else { return }
+        selectScreenshotTarget(screenshotTargets[highlightedScreenshotIndex])
+    }
+
+    private func selectScreenshotTarget(_ target: CaptureTarget) {
+        withAnimation(PaletteStyle.animation) {
+            showScreenshotPalette = false
+        }
+
+        Task {
+            if let data = await ScreenCaptureService.shared.capture(target: target) {
+                await MainActor.run {
+                    viewModel.attachScreenshot(data)
+                }
+            }
+        }
+    }
+
+    private func captureAndAttachFullScreen() {
+        Task {
+            if let data = await ScreenCaptureService.shared.captureFullScreen() {
+                await MainActor.run {
+                    viewModel.attachScreenshot(data)
+                }
+            }
         }
     }
 
