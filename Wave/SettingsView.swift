@@ -36,6 +36,7 @@ struct SettingsView: View {
         .frame(minWidth: 620, minHeight: 460)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(.ultraThinMaterial)
+        .preferredColorScheme(.dark)
     }
 }
 
@@ -157,62 +158,20 @@ struct GeneralSettingsView: View {
 
     @State private var selectedProvider: AIProvider = .openai
     @State private var selectedModel: AIModel = .default
-    @State private var appearance: String = "system"
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            appearanceCard
-            apiKeysCard
-            modelSelectionCard
+            apiKeysSection
+            modelSelectionSection
         }
         .onAppear {
             loadAPIKeyStatus()
             loadModelSelection()
-            appearance = UserDefaults.standard.string(forKey: "appearance") ?? "system"
         }
     }
 
-    private var appearanceCard: some View {
-        SettingsCard {
-            VStack(alignment: .leading, spacing: 16) {
-                HStack(spacing: 12) {
-                    Image(systemName: "paintbrush.fill")
-                        .font(.waveSystem(size: 16, weight: .medium))
-                        .foregroundStyle(Color.waveAccent)
-                        .frame(width: 36, height: 36)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(Color.waveAccent.opacity(0.1))
-                        )
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Appearance")
-                            .font(.waveSystem(size: 14, weight: .semibold))
-                            .foregroundStyle(Color.waveTextPrimary)
-                        Text("Choose light, dark, or follow system")
-                            .font(.waveSystem(size: 11))
-                            .foregroundStyle(Color.waveTextSecondary)
-                    }
-                }
-
-                Color.waveDivider.frame(height: 1)
-
-                Picker("Appearance", selection: $appearance) {
-                    Text("Light").tag("light")
-                    Text("Dark").tag("dark")
-                    Text("System").tag("system")
-                }
-                .pickerStyle(.segmented)
-                .onChange(of: appearance) { _, newValue in
-                    UserDefaults.standard.set(newValue, forKey: "appearance")
-                    (NSApp.delegate as? AppDelegate)?.applyAppearance()
-                }
-            }
-        }
-    }
-
-    private var apiKeysCard: some View {
-        SettingsCard {
+    private var apiKeysSection: some View {
+        SettingsGlassSection {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(spacing: 12) {
                     Image(systemName: "key.fill")
@@ -315,11 +274,11 @@ struct GeneralSettingsView: View {
                         .font(.waveSystem(size: 13, design: .monospaced))
                         .padding(8)
                         .background(
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(Color.waveSettingsBackground)
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .fill(.ultraThinMaterial)
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 6)
-                                        .stroke(Color.waveBorder, lineWidth: 1)
+                                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                        .stroke(Color.waveBorder.opacity(0.6), lineWidth: 0.5)
                                 )
                         )
                         .onSubmit(onSave)
@@ -357,8 +316,8 @@ struct GeneralSettingsView: View {
         }
     }
 
-    private var modelSelectionCard: some View {
-        SettingsCard {
+    private var modelSelectionSection: some View {
+        SettingsGlassSection {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(spacing: 12) {
                     Image(systemName: "cpu.fill")
@@ -462,7 +421,7 @@ struct ContextSettingsView: View {
     @State private var screenshotEnabled: Bool = true
 
     var body: some View {
-        SettingsCard {
+        SettingsGlassSection {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(spacing: 12) {
                     Image(systemName: "camera.viewfinder")
@@ -516,7 +475,7 @@ struct ContextSettingsView: View {
 
 struct ShortcutsSettingsView: View {
     var body: some View {
-        SettingsCard {
+        SettingsGlassSection {
             VStack(spacing: 0) {
                 ShortcutRow(icon: "rectangle.on.rectangle.angled", action: "Toggle Wave", keys: ["⇧", "⌫"], isLast: false)
                 ShortcutRow(icon: "plus.message", action: "New Chat", keys: ["⌘", "N"], isLast: false)
@@ -556,12 +515,11 @@ struct ShortcutRow: View {
                             .padding(.horizontal, 4)
                             .background(
                                 RoundedRectangle(cornerRadius: 5, style: .continuous)
-                                    .fill(Color.waveSettingsBackground)
-                                    .shadow(color: Color.black.opacity(0.06), radius: 0, x: 0, y: 1)
+                                    .fill(.ultraThinMaterial)
                             )
                             .overlay(
                                 RoundedRectangle(cornerRadius: 5, style: .continuous)
-                                    .stroke(Color.waveBorder, lineWidth: 0.5)
+                                    .stroke(Color.waveBorder.opacity(0.6), lineWidth: 0.5)
                             )
                     }
                 }
@@ -579,7 +537,7 @@ struct ShortcutRow: View {
 
 // MARK: - Reusable Components
 
-struct SettingsCard<Content: View>: View {
+struct SettingsGlassSection<Content: View>: View {
     @ViewBuilder let content: Content
 
     var body: some View {
@@ -587,12 +545,7 @@ struct SettingsCard<Content: View>: View {
             .padding(16)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color.waveSettingsCard)
-                    .shadow(color: Color.black.opacity(0.04), radius: 3, x: 0, y: 1)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(Color.waveBorder, lineWidth: 0.5)
+                    .fill(.regularMaterial)
             )
     }
 }

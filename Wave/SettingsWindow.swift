@@ -20,6 +20,7 @@ final class SettingsWindow: NSWindow {
         backgroundColor = .clear
         isOpaque = false
         isReleasedWhenClosed = false
+        appearance = NSAppearance(named: .darkAqua)
 
         minSize = NSSize(width: 520, height: 400)
     }

@@ -15,25 +15,16 @@ enum SettingsPaletteLevel: Equatable {
 }
 
 enum SettingItem: CaseIterable, Equatable {
-    case appearance
     case screenshot
 
     var displayName: String {
         switch self {
-        case .appearance: "Appearance"
         case .screenshot: "Screenshot"
         }
     }
 
     var options: [SettingOption] {
         switch self {
-        case .appearance:
-            let current = UserDefaults.standard.string(forKey: "appearance") ?? "system"
-            return [
-                SettingOption(label: "Light", value: "light", isSelected: current == "light"),
-                SettingOption(label: "Dark", value: "dark", isSelected: current == "dark"),
-                SettingOption(label: "System", value: "system", isSelected: current == "system")
-            ]
         case .screenshot:
             let current = UserDefaults.standard.object(forKey: "screenshot_enabled") as? Bool ?? true
             return [
@@ -484,11 +475,6 @@ struct ContentView: View {
 
     private func applySettingOption(_ setting: SettingItem, _ option: SettingOption) {
         switch setting {
-        case .appearance:
-            if let value = option.value as? String {
-                UserDefaults.standard.set(value, forKey: "appearance")
-                NotificationCenter.default.post(name: .appearanceChanged, object: nil)
-            }
         case .screenshot:
             if let value = option.value as? Bool {
                 UserDefaults.standard.set(value, forKey: "screenshot_enabled")

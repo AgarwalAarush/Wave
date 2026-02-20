@@ -6,7 +6,7 @@ struct MarkdownContentView: View {
     var body: some View {
         let segments = MarkdownParser.parse(text)
 
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             ForEach(Array(segments.enumerated()), id: \.offset) { _, segment in
                 switch segment {
                 case .text(let content):
