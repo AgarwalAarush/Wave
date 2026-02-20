@@ -11,7 +11,7 @@ struct MarkdownContentView: View {
                 switch segment {
                 case .text(let content):
                     Text(markdownAttributedString(content))
-                        .font(.system(size: 14))
+                        .font(.waveSystem(size: 14))
                         .foregroundStyle(Color.waveTextPrimary)
                         .textSelection(.enabled)
 

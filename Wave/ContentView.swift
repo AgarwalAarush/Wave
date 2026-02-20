@@ -87,12 +87,12 @@ struct ContentView: View {
     private var queryBar: some View {
         HStack(spacing: 10) {
             Image(systemName: "camera.viewfinder")
-                .font(.system(size: 14, weight: .medium))
+                .font(.waveSystem(size: 14, weight: .medium))
                 .foregroundStyle(Color.waveIcon)
 
             TextField("Ask anything...", text: $viewModel.queryText, axis: .vertical)
                 .textFieldStyle(.plain)
-                .font(.system(size: 15))
+                .font(.waveSystem(size: 15))
                 .foregroundStyle(Color.waveTextPrimary)
                 .lineLimit(1...4)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -108,7 +108,7 @@ struct ContentView: View {
             if viewModel.isStreaming {
                 Button { viewModel.stopStreaming() } label: {
                     Image(systemName: "stop.circle.fill")
-                        .font(.system(size: 16))
+                        .font(.waveSystem(size: 16))
                         .foregroundStyle(Color.waveIcon)
                 }
                 .buttonStyle(.plain)
@@ -123,7 +123,7 @@ struct ContentView: View {
     private var modelPill: some View {
         Button { toggleModelPicker() } label: {
             Text(viewModel.selectedModel.displayName)
-                .font(.system(size: 11, weight: .medium, design: .rounded))
+                .font(.waveSystem(size: 11, weight: .medium, design: .rounded))
                 .foregroundStyle(Color.waveTextSecondary)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)
@@ -145,12 +145,12 @@ struct ContentView: View {
                     } label: {
                         HStack {
                             Text(model.displayName)
-                                .font(.system(size: 13, weight: .medium, design: .rounded))
+                                .font(.waveSystem(size: 13, weight: .medium, design: .rounded))
                                 .foregroundStyle(Color.waveTextPrimary)
                             Spacer()
                             if model == viewModel.selectedModel {
                                 Image(systemName: "checkmark")
-                                    .font(.system(size: 10, weight: .semibold))
+                                    .font(.waveSystem(size: 10, weight: .semibold))
                                     .foregroundStyle(Color.waveTextSecondary)
                             }
                         }
@@ -201,7 +201,7 @@ struct ContentView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     if let error = viewModel.errorMessage {
                         Label(error, systemImage: "exclamationmark.triangle.fill")
-                            .font(.system(size: 13))
+                            .font(.waveSystem(size: 13))
                             .foregroundStyle(Color.waveError)
                             .padding(.horizontal, 16)
                             .padding(.top, 8)
@@ -218,7 +218,7 @@ struct ContentView: View {
                             ProgressView()
                                 .controlSize(.small)
                             Text("Thinking...")
-                                .font(.system(size: 13))
+                                .font(.waveSystem(size: 13))
                                 .foregroundStyle(Color.waveTextSecondary)
                         }
                         .padding(.horizontal, 16)

@@ -12,7 +12,7 @@ struct CodeBlockView: View {
             // Header bar with language label and copy button
             HStack {
                 Text(displayLanguage)
-                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                    .font(.waveSystem(size: 11, weight: .medium, design: .monospaced))
                     .foregroundStyle(Color.waveCodeText.opacity(0.6))
 
                 Spacer()
@@ -22,10 +22,10 @@ struct CodeBlockView: View {
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: showCopied ? "checkmark" : "square.on.square")
-                            .font(.system(size: 10, weight: .medium))
+                            .font(.waveSystem(size: 10, weight: .medium))
                         if showCopied {
                             Text("Copied!")
-                                .font(.system(size: 10, weight: .medium))
+                                .font(.waveSystem(size: 10, weight: .medium))
                         }
                     }
                     .foregroundStyle(showCopied ? Color.waveAccent : Color.waveCodeText.opacity(0.6))
@@ -40,7 +40,7 @@ struct CodeBlockView: View {
             // Code content
             ScrollView(.horizontal, showsIndicators: false) {
                 Text(SyntaxHighlighter.highlight(code: code, language: language))
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(.waveSystem(size: 12, design: .monospaced))
                     .textSelection(.enabled)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)

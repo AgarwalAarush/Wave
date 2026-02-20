@@ -33,9 +33,9 @@ struct SettingsView: View {
             SidebarView(selectedTab: $selectedTab)
             DetailView(selectedTab: selectedTab)
         }
-        .frame(width: 620, height: 440)
+        .frame(minWidth: 620, minHeight: 460)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.waveSettingsBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }
 
@@ -48,14 +48,14 @@ struct SidebarView: View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 7) {
                 Image(systemName: "wave.3.right")
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.waveSystem(size: 12, weight: .bold))
                     .foregroundStyle(Color.waveAccent)
                 Text("Wave")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .font(.waveSystem(size: 13, weight: .bold, design: .rounded))
                     .foregroundStyle(Color.waveTextPrimary)
             }
             .padding(.horizontal, 12)
-            .padding(.top, 16)
+            .padding(.top, 52)
             .padding(.bottom, 12)
 
             ForEach(SettingsTab.allCases, id: \.self) { tab in
@@ -82,12 +82,12 @@ struct SidebarRow: View {
     var body: some View {
         HStack(spacing: 9) {
             Image(systemName: tab.icon)
-                .font(.system(size: 13, weight: .medium))
+                .font(.waveSystem(size: 13, weight: .medium))
                 .foregroundStyle(isSelected ? Color.waveAccent : Color.waveTextSecondary)
                 .frame(width: 20)
 
             Text(tab.rawValue)
-                .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                .font(.waveSystem(size: 13, weight: isSelected ? .semibold : .regular))
                 .foregroundStyle(isSelected ? Color.waveTextPrimary : Color.waveTextSecondary)
 
             Spacer()
@@ -95,7 +95,7 @@ struct SidebarRow: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
         .background(
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(isSelected
                       ? Color.waveAccent.opacity(0.12)
                       : isHovered ? Color.waveSettingsRowHover.opacity(0.5) : Color.clear)
@@ -117,11 +117,11 @@ struct DetailView: View {
             VStack(alignment: .leading, spacing: 0) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(selectedTab.rawValue)
-                        .font(.system(size: 18, weight: .semibold))
+                        .font(.waveSystem(size: 18, weight: .semibold))
                         .foregroundStyle(Color.waveTextPrimary)
 
                     Text(selectedTab.subtitle)
-                        .font(.system(size: 12))
+                        .font(.waveSystem(size: 12))
                         .foregroundStyle(Color.waveTextSecondary)
                 }
                 .padding(.bottom, 20)
@@ -159,7 +159,7 @@ struct GeneralSettingsView: View {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(spacing: 12) {
                     Image(systemName: "key.fill")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.waveSystem(size: 16, weight: .medium))
                         .foregroundStyle(Color.waveAccent)
                         .frame(width: 36, height: 36)
                         .background(
@@ -169,10 +169,10 @@ struct GeneralSettingsView: View {
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text("OpenAI API Key")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.waveSystem(size: 14, weight: .semibold))
                             .foregroundStyle(Color.waveTextPrimary)
                         Text("Required to connect to OpenAI")
-                            .font(.system(size: 11))
+                            .font(.waveSystem(size: 11))
                             .foregroundStyle(Color.waveTextSecondary)
                     }
                 }
@@ -184,11 +184,11 @@ struct GeneralSettingsView: View {
                     HStack(spacing: 12) {
                         HStack(spacing: 6) {
                             Image(systemName: "key.fill")
-                                .font(.system(size: 12))
+                                .font(.waveSystem(size: 12))
                                 .foregroundStyle(Color.waveAccent)
 
                             Text("API key configured")
-                                .font(.system(size: 13))
+                                .font(.waveSystem(size: 13))
                                 .foregroundStyle(Color.waveTextSecondary)
                         }
 
@@ -199,7 +199,7 @@ struct GeneralSettingsView: View {
                             apiKey = ""
                         }) {
                             Text("Replace Key")
-                                .font(.system(size: 12, weight: .medium))
+                                .font(.waveSystem(size: 12, weight: .medium))
                                 .foregroundStyle(Color.waveAccent)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
@@ -221,7 +221,7 @@ struct GeneralSettingsView: View {
                         HStack(spacing: 8) {
                             SecureField("sk-...", text: $apiKey)
                                 .textFieldStyle(.plain)
-                                .font(.system(size: 13, design: .monospaced))
+                                .font(.waveSystem(size: 13, design: .monospaced))
                                 .padding(10)
                                 .background(
                                     RoundedRectangle(cornerRadius: 8)
@@ -239,10 +239,10 @@ struct GeneralSettingsView: View {
                                 HStack(spacing: 6) {
                                     if keySaved {
                                         Image(systemName: "checkmark")
-                                            .font(.system(size: 11, weight: .bold))
+                                            .font(.waveSystem(size: 11, weight: .bold))
                                     }
                                     Text(keySaved ? "Saved" : "Save Key")
-                                        .font(.system(size: 12, weight: .semibold))
+                                        .font(.waveSystem(size: 12, weight: .semibold))
                                 }
                                 .foregroundStyle(Color.white)
                                 .padding(.horizontal, 14)
@@ -262,7 +262,7 @@ struct GeneralSettingsView: View {
                                     apiKey = ""
                                 }) {
                                     Text("Cancel")
-                                        .font(.system(size: 12, weight: .medium))
+                                        .font(.waveSystem(size: 12, weight: .medium))
                                         .foregroundStyle(Color.waveTextSecondary)
                                         .padding(.horizontal, 14)
                                         .padding(.vertical, 8)
@@ -279,11 +279,11 @@ struct GeneralSettingsView: View {
 
                 HStack(alignment: .top, spacing: 8) {
                     Image(systemName: "lock.shield")
-                        .font(.system(size: 11))
+                        .font(.waveSystem(size: 11))
                         .foregroundStyle(Color.waveTextSecondary)
                         .padding(.top, 1)
                     Text("Your API key is stored securely in the system keychain and never leaves your device.")
-                        .font(.system(size: 11))
+                        .font(.waveSystem(size: 11))
                         .foregroundStyle(Color.waveTextSecondary)
                         .lineSpacing(2)
                 }
@@ -324,7 +324,7 @@ struct ModelSettingsView: View {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(spacing: 12) {
                     Image(systemName: "cpu.fill")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.waveSystem(size: 16, weight: .medium))
                         .foregroundStyle(Color.waveAccent)
                         .frame(width: 36, height: 36)
                         .background(
@@ -334,10 +334,10 @@ struct ModelSettingsView: View {
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text("GPT Model")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.waveSystem(size: 14, weight: .semibold))
                             .foregroundStyle(Color.waveTextPrimary)
                         Text("Pick the model that fits your workflow")
-                            .font(.system(size: 11))
+                            .font(.waveSystem(size: 11))
                             .foregroundStyle(Color.waveTextSecondary)
                     }
                 }
@@ -359,11 +359,11 @@ struct ModelSettingsView: View {
 
                 HStack(alignment: .top, spacing: 8) {
                     Image(systemName: "info.circle")
-                        .font(.system(size: 11))
+                        .font(.waveSystem(size: 11))
                         .foregroundStyle(Color.waveTextSecondary)
                         .padding(.top, 1)
                     Text("More capable models produce better results but may respond slower and cost more per query.")
-                        .font(.system(size: 11))
+                        .font(.waveSystem(size: 11))
                         .foregroundStyle(Color.waveTextSecondary)
                         .lineSpacing(2)
                 }
@@ -385,7 +385,7 @@ struct ModelRow: View {
         Button(action: onSelect) {
             HStack(spacing: 12) {
                 Image(systemName: model.icon)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.waveSystem(size: 14, weight: .medium))
                     .foregroundStyle(isSelected ? Color.waveAccent : Color.waveTextSecondary)
                     .frame(width: 28, height: 28)
                     .background(
@@ -395,10 +395,10 @@ struct ModelRow: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(model.displayName)
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.waveSystem(size: 13, weight: .medium))
                         .foregroundStyle(Color.waveTextPrimary)
                     Text(model.subtitle)
-                        .font(.system(size: 11))
+                        .font(.waveSystem(size: 11))
                         .foregroundStyle(Color.waveTextSecondary)
                 }
 
@@ -406,7 +406,7 @@ struct ModelRow: View {
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 16))
+                        .font(.waveSystem(size: 16))
                         .foregroundStyle(Color.waveAccent)
                 } else {
                     Circle()
@@ -441,7 +441,7 @@ struct ContextSettingsView: View {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(spacing: 12) {
                     Image(systemName: "camera.viewfinder")
-                        .font(.system(size: 18, weight: .medium))
+                        .font(.waveSystem(size: 18, weight: .medium))
                         .foregroundStyle(Color.waveAccent)
                         .frame(width: 36, height: 36)
                         .background(
@@ -451,10 +451,10 @@ struct ContextSettingsView: View {
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Screen Capture")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.waveSystem(size: 14, weight: .semibold))
                             .foregroundStyle(Color.waveTextPrimary)
                         Text("Attach a screenshot with every prompt")
-                            .font(.system(size: 11))
+                            .font(.waveSystem(size: 11))
                             .foregroundStyle(Color.waveTextSecondary)
                     }
                 }
@@ -471,11 +471,11 @@ struct ContextSettingsView: View {
 
                 HStack(alignment: .top, spacing: 8) {
                     Image(systemName: "info.circle")
-                        .font(.system(size: 11))
+                        .font(.waveSystem(size: 11))
                         .foregroundStyle(Color.waveTextSecondary)
                         .padding(.top, 1)
                     Text("When enabled, Wave captures your screen before each query to give the model visual context. The screenshot is sent alongside your prompt and is never stored.")
-                        .font(.system(size: 11))
+                        .font(.waveSystem(size: 11))
                         .foregroundStyle(Color.waveTextSecondary)
                         .lineSpacing(2)
                 }
@@ -512,12 +512,12 @@ struct ShortcutRow: View {
         VStack(spacing: 0) {
             HStack {
                 Image(systemName: icon)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.waveSystem(size: 12, weight: .medium))
                     .foregroundStyle(Color.waveTextSecondary)
                     .frame(width: 20)
 
                 Text(action)
-                    .font(.system(size: 13))
+                    .font(.waveSystem(size: 13))
                     .foregroundStyle(Color.waveTextPrimary)
 
                 Spacer()
@@ -525,7 +525,7 @@ struct ShortcutRow: View {
                 HStack(spacing: 4) {
                     ForEach(keys, id: \.self) { key in
                         Text(key)
-                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .font(.waveSystem(size: 11, weight: .medium, design: .rounded))
                             .foregroundStyle(Color.waveTextSecondary)
                             .frame(minWidth: 22, minHeight: 22)
                             .padding(.horizontal, 4)
@@ -561,12 +561,12 @@ struct SettingsCard<Content: View>: View {
         content
             .padding(16)
             .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(Color.waveSettingsCard)
                     .shadow(color: Color.black.opacity(0.04), radius: 3, x: 0, y: 1)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .stroke(Color.waveBorder, lineWidth: 0.5)
             )
     }
@@ -580,7 +580,7 @@ struct SettingsToggleRow: View {
     var body: some View {
         Toggle(isOn: $isOn) {
             Text(title)
-                .font(.system(size: 13))
+                .font(.waveSystem(size: 13))
                 .foregroundStyle(Color.waveTextPrimary)
         }
         .toggleStyle(AccentToggleStyle())

@@ -4,6 +4,7 @@ import SwiftUI
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var panel: WavePanel!
+    private var settingsWindow: SettingsWindow?
     private let chatViewModel = ChatViewModel()
     private var statusItem: NSStatusItem?
     private let isRunningTests = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
@@ -11,7 +12,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         guard !isRunningTests else { return }
         setupPanel()
+        setupSettingsWindow()
         setupMenuBarItem()
+        setupMainMenu()
         HotKeyManager.shared.onToggle = { [weak self] in self?.toggle() }
         HotKeyManager.shared.register()
     }
@@ -65,6 +68,43 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         chatViewModel.newChat()
     }
 
+    // MARK: - Settings Window
+
+    private func setupSettingsWindow() {
+        settingsWindow = SettingsWindow()
+
+        let hosting = NSHostingView(rootView: SettingsView())
+        hosting.wantsLayer = true
+        hosting.layer?.backgroundColor = NSColor.clear.cgColor
+        settingsWindow?.contentView = hosting
+
+        if let window = settingsWindow, let screen = NSScreen.main {
+            let screenFrame = screen.visibleFrame
+            let x = screenFrame.midX - window.frame.width / 2
+            let y = screenFrame.midY - window.frame.height / 2
+            window.setFrameOrigin(NSPoint(x: x, y: y))
+        }
+    }
+
+    // MARK: - Main Menu (for Cmd+,)
+
+    private func setupMainMenu() {
+        let mainMenu = NSMenu()
+
+        let appMenu = NSMenu()
+        let appMenuItem = NSMenuItem(title: "Wave", action: nil, keyEquivalent: "")
+        appMenuItem.submenu = appMenu
+
+        let settingsItem = NSMenuItem(title: "Settings…", action: #selector(menuOpenSettings), keyEquivalent: ",")
+        settingsItem.keyEquivalentModifierMask = .command
+        appMenu.addItem(settingsItem)
+        appMenu.addItem(NSMenuItem.separator())
+        appMenu.addItem(NSMenuItem(title: "Quit Wave", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+
+        mainMenu.addItem(appMenuItem)
+        NSApp.mainMenu = mainMenu
+    }
+
     // MARK: - Menu Bar
 
     private func setupMenuBarItem() {
@@ -90,13 +130,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func menuOpenSettings() {
         NSApp.activate(ignoringOtherApps: true)
-        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-        DispatchQueue.main.async {
-            for window in NSApp.windows where window.title == "Settings" || window.identifier?.rawValue.contains("Settings") == true {
-                window.makeKeyAndOrderFront(nil)
-                window.orderFrontRegardless()
-                return
-            }
-        }
+        settingsWindow?.makeKeyAndOrderFront(nil)
     }
 }
