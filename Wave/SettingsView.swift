@@ -158,15 +158,57 @@ struct GeneralSettingsView: View {
 
     @State private var selectedProvider: AIProvider = .openai
     @State private var selectedModel: AIModel = .default
+    @State private var appearance: String = "system"
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
+            appearanceSection
             apiKeysSection
             modelSelectionSection
         }
         .onAppear {
             loadAPIKeyStatus()
             loadModelSelection()
+            appearance = UserDefaults.standard.string(forKey: "appearance") ?? "system"
+        }
+    }
+
+    private var appearanceSection: some View {
+        SettingsGlassSection {
+            VStack(alignment: .leading, spacing: 16) {
+                HStack(spacing: 12) {
+                    Image(systemName: "paintbrush.fill")
+                        .font(.waveSystem(size: 16, weight: .medium))
+                        .foregroundStyle(Color.waveAccent)
+                        .frame(width: 36, height: 36)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(Color.waveAccent.opacity(0.1))
+                        )
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Appearance")
+                            .font(.waveSystem(size: 14, weight: .semibold))
+                            .foregroundStyle(Color.waveTextPrimary)
+                        Text("Choose light, dark, or follow system")
+                            .font(.waveSystem(size: 11))
+                            .foregroundStyle(Color.waveTextSecondary)
+                    }
+                }
+
+                Color.waveDivider.frame(height: 1)
+
+                Picker("Appearance", selection: $appearance) {
+                    Text("Light").tag("light")
+                    Text("Dark").tag("dark")
+                    Text("System").tag("system")
+                }
+                .pickerStyle(.segmented)
+                .onChange(of: appearance) { _, newValue in
+                    UserDefaults.standard.set(newValue, forKey: "appearance")
+                    (NSApp.delegate as? AppDelegate)?.applyAppearance()
+                }
+            }
         }
     }
 
