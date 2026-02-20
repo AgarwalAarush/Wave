@@ -16,8 +16,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setupSettingsWindow()
         setupMenuBarItem()
         setupMainMenu()
+        setupNotificationObservers()
         HotKeyManager.shared.onToggle = { [weak self] in self?.toggle() }
         HotKeyManager.shared.register()
+    }
+
+    private func setupNotificationObservers() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAppearanceChange),
+            name: .appearanceChanged,
+            object: nil
+        )
+    }
+
+    @objc private func handleAppearanceChange() {
+        applyAppearance()
     }
 
     func applyAppearance() {
