@@ -35,7 +35,7 @@ struct SettingsView: View {
         }
         .frame(minWidth: 620, minHeight: 460)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.waveSettingsBackground)
+        .background(.ultraThinMaterial)
     }
 }
 
@@ -70,7 +70,6 @@ struct SidebarView: View {
         }
         .padding(.horizontal, 8)
         .frame(width: 170)
-        .background(Color.waveSettingsSidebar)
     }
 }
 
@@ -142,7 +141,6 @@ struct DetailView: View {
             .padding(24)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.waveSettingsBackground)
     }
 }
 
