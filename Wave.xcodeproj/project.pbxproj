@@ -58,12 +58,21 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		9B6761912F48104E003FAC7E /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				9B97801A2F47BE6A00BAFC58 /* XCTest.framework */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
 		9B9780002F47BE6900BAFC58 = {
 			isa = PBXGroup;
 			children = (
 				9B97800B2F47BE6900BAFC58 /* Wave */,
 				9B97801B2F47BE6A00BAFC58 /* WaveTests */,
 				9B97800A2F47BE6900BAFC58 /* Products */,
+				9B6761912F48104E003FAC7E /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};

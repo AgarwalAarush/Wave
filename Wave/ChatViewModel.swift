@@ -1,37 +1,35 @@
 import Foundation
 import SwiftUI
 
-protocol APIKeyReading {
-    func read(key: String) -> String?
-}
+struct ChatViewModelDependencies {
+    let readAPIKey: (String) -> String?
+    let readSettingString: (String) -> String?
+    let readSettingObject: (String) -> Any?
+    let writeSetting: (Any?, String) -> Void
+    let stream: ([GPTMessage], String, String) -> AsyncThrowingStream<String, Error>
+    let captureScreen: () async -> Data?
 
-protocol SettingsStoring {
-    func string(forKey defaultName: String) -> String?
-    func object(forKey defaultName: String) -> Any?
-    func set(_ value: Any?, forKey defaultName: String)
+    static let live = ChatViewModelDependencies(
+        readAPIKey: { key in
+            KeychainHelper.read(key: key)
+        },
+        readSettingString: { key in
+            UserDefaults.standard.string(forKey: key)
+        },
+        readSettingObject: { key in
+            UserDefaults.standard.object(forKey: key)
+        },
+        writeSetting: { value, key in
+            UserDefaults.standard.set(value, forKey: key)
+        },
+        stream: { messages, model, apiKey in
+            GPTService.shared.stream(messages: messages, model: model, apiKey: apiKey)
+        },
+        captureScreen: {
+            await ScreenCaptureService.shared.captureFullScreen()
+        }
+    )
 }
-
-protocol GPTStreaming {
-    func stream(
-        messages: [GPTMessage],
-        model: String,
-        apiKey: String
-    ) -> AsyncThrowingStream<String, Error>
-}
-
-protocol ScreenCapturing {
-    func captureFullScreen() async -> Data?
-}
-
-struct SystemAPIKeyReader: APIKeyReading {
-    func read(key: String) -> String? {
-        KeychainHelper.read(key: key)
-    }
-}
-
-extension UserDefaults: SettingsStoring {}
-extension GPTService: GPTStreaming {}
-extension ScreenCaptureService: ScreenCapturing {}
 
 @Observable
 final class ChatViewModel {
@@ -43,27 +41,16 @@ final class ChatViewModel {
     var hasResponse: Bool { !responseText.isEmpty || isStreaming }
 
     var selectedModel: GPTModel {
-        didSet { settingsStore.set(selectedModel.rawValue, forKey: "gpt_model") }
+        didSet { dependencies.writeSetting(selectedModel.rawValue, "gpt_model") }
     }
 
     @ObservationIgnored private var streamTask: Task<Void, Never>?
-    @ObservationIgnored private let apiKeyReader: APIKeyReading
-    @ObservationIgnored private let settingsStore: SettingsStoring
-    @ObservationIgnored private let gptStreamer: GPTStreaming
-    @ObservationIgnored private let screenCapturer: ScreenCapturing
+    @ObservationIgnored private let dependencies: ChatViewModelDependencies
 
-    init(
-        apiKeyReader: APIKeyReading = SystemAPIKeyReader(),
-        settingsStore: SettingsStoring = UserDefaults.standard,
-        gptStreamer: GPTStreaming = GPTService.shared,
-        screenCapturer: ScreenCapturing = ScreenCaptureService.shared
-    ) {
-        self.apiKeyReader = apiKeyReader
-        self.settingsStore = settingsStore
-        self.gptStreamer = gptStreamer
-        self.screenCapturer = screenCapturer
+    init(dependencies: ChatViewModelDependencies = .live) {
+        self.dependencies = dependencies
 
-        let stored = settingsStore.string(forKey: "gpt_model")
+        let stored = dependencies.readSettingString("gpt_model")
         self.selectedModel = GPTModel.from(rawValue: stored)
     }
 
@@ -73,7 +60,7 @@ final class ChatViewModel {
         let query = queryText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty, !isStreaming else { return }
 
-        guard let apiKey = apiKeyReader.read(key: "openai_api_key"), !apiKey.isEmpty else {
+        guard let apiKey = dependencies.readAPIKey("openai_api_key"), !apiKey.isEmpty else {
             errorMessage = "No API key configured. Open Settings (Cmd+,) to add your OpenAI key."
             return
         }
@@ -83,12 +70,12 @@ final class ChatViewModel {
         responseText = ""
 
         let model = selectedModel.rawValue
-        let screenshotEnabled = settingsStore.object(forKey: "screenshot_enabled") as? Bool ?? true
+        let screenshotEnabled = dependencies.readSettingObject("screenshot_enabled") as? Bool ?? true
 
         streamTask = Task {
             var screenshotData: Data?
             if screenshotEnabled {
-                screenshotData = await screenCapturer.captureFullScreen()
+                screenshotData = await dependencies.captureScreen()
             }
 
             var contentParts: [GPTMessage.ContentPart] = []
@@ -105,7 +92,7 @@ final class ChatViewModel {
             ]
 
             do {
-                let stream = gptStreamer.stream(messages: messages, model: model, apiKey: apiKey)
+                let stream = dependencies.stream(messages, model, apiKey)
                 for try await chunk in stream {
                     self.responseText += chunk
                 }

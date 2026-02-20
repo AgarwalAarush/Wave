@@ -5,11 +5,9 @@ import XCTest
 final class ChatViewModelTests: XCTestCase {
     func testInitUsesStoredModel() {
         let settings = MockSettingsStore(values: ["gpt_model": GPTModel.full.rawValue])
-        let viewModel = ChatViewModel(
-            apiKeyReader: MockAPIKeyReader(apiKey: "sk-test"),
-            settingsStore: settings,
-            gptStreamer: MockStreamer(),
-            screenCapturer: MockScreenCapturer()
+        let viewModel = makeViewModel(
+            apiKey: "sk-test",
+            settings: settings
         )
 
         XCTAssertEqual(viewModel.selectedModel, .full)
@@ -17,11 +15,9 @@ final class ChatViewModelTests: XCTestCase {
 
     func testSelectedModelPersistsToSettings() {
         let settings = MockSettingsStore()
-        let viewModel = ChatViewModel(
-            apiKeyReader: MockAPIKeyReader(apiKey: "sk-test"),
-            settingsStore: settings,
-            gptStreamer: MockStreamer(),
-            screenCapturer: MockScreenCapturer()
+        let viewModel = makeViewModel(
+            apiKey: "sk-test",
+            settings: settings
         )
 
         viewModel.selectedModel = .codex
@@ -30,11 +26,9 @@ final class ChatViewModelTests: XCTestCase {
 
     func testSubmitWithoutAPIKeySetsError() {
         let streamer = MockStreamer()
-        let viewModel = ChatViewModel(
-            apiKeyReader: MockAPIKeyReader(apiKey: nil),
-            settingsStore: MockSettingsStore(),
-            gptStreamer: streamer,
-            screenCapturer: MockScreenCapturer()
+        let viewModel = makeViewModel(
+            apiKey: nil,
+            streamer: streamer
         )
         viewModel.queryText = "Hello"
 
@@ -48,16 +42,16 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertNil(streamer.capturedMessages)
     }
 
-    func testSubmitStreamsResponseAndStops() async {
+    func testSubmitStreamsResponseAndStops() async throws {
         let settings = MockSettingsStore(values: ["screenshot_enabled": false])
         let streamer = MockStreamer()
         streamer.streamToReturn = makeStream(chunks: ["Hello", " world"])
         let capturer = MockScreenCapturer(data: Data([0x01]))
-        let viewModel = ChatViewModel(
-            apiKeyReader: MockAPIKeyReader(apiKey: "sk-test"),
-            settingsStore: settings,
-            gptStreamer: streamer,
-            screenCapturer: capturer
+        let viewModel = makeViewModel(
+            apiKey: "sk-test",
+            settings: settings,
+            streamer: streamer,
+            capturer: capturer
         )
         viewModel.queryText = "What is this?"
 
@@ -70,26 +64,26 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertEqual(streamer.capturedModel, viewModel.selectedModel.rawValue)
         XCTAssertEqual(streamer.capturedAPIKey, "sk-test")
 
-        let messages = try? XCTUnwrap(streamer.capturedMessages)
-        XCTAssertEqual(messages?.count, 2)
-        let userMessage = messages?.last
-        let hasImage = userMessage?.content.contains(where: {
+        let messages = try XCTUnwrap(streamer.capturedMessages)
+        XCTAssertEqual(messages.count, 2)
+        let userMessage = try XCTUnwrap(messages.last)
+        let hasImage = userMessage.content.contains(where: {
             if case .imageData = $0 { return true }
             return false
-        }) ?? false
+        })
         XCTAssertFalse(hasImage)
     }
 
-    func testSubmitIncludesScreenshotWhenEnabled() async {
+    func testSubmitIncludesScreenshotWhenEnabled() async throws {
         let settings = MockSettingsStore(values: ["screenshot_enabled": true])
         let streamer = MockStreamer()
         streamer.streamToReturn = makeStream(chunks: ["ok"])
         let capturer = MockScreenCapturer(data: Data([0xAA]))
-        let viewModel = ChatViewModel(
-            apiKeyReader: MockAPIKeyReader(apiKey: "sk-test"),
-            settingsStore: settings,
-            gptStreamer: streamer,
-            screenCapturer: capturer
+        let viewModel = makeViewModel(
+            apiKey: "sk-test",
+            settings: settings,
+            streamer: streamer,
+            capturer: capturer
         )
         viewModel.queryText = "Use screenshot"
 
@@ -97,15 +91,15 @@ final class ChatViewModelTests: XCTestCase {
         await waitUntil { !viewModel.isStreaming }
 
         XCTAssertEqual(capturer.callCount, 1)
-        let userMessage = try? XCTUnwrap(streamer.capturedMessages?.last)
-        let hasImage = userMessage?.content.contains(where: {
+        let userMessage = try XCTUnwrap(streamer.capturedMessages?.last)
+        let hasImage = userMessage.content.contains(where: {
             if case .imageData = $0 { return true }
             return false
-        }) ?? false
-        let hasText = userMessage?.content.contains(where: {
+        })
+        let hasText = userMessage.content.contains(where: {
             if case .text("Use screenshot") = $0 { return true }
             return false
-        }) ?? false
+        })
         XCTAssertTrue(hasImage)
         XCTAssertTrue(hasText)
     }
@@ -114,11 +108,10 @@ final class ChatViewModelTests: XCTestCase {
         let settings = MockSettingsStore(values: ["screenshot_enabled": false])
         let streamer = MockStreamer()
         streamer.streamToReturn = makeCancellableInfiniteStream()
-        let viewModel = ChatViewModel(
-            apiKeyReader: MockAPIKeyReader(apiKey: "sk-test"),
-            settingsStore: settings,
-            gptStreamer: streamer,
-            screenCapturer: MockScreenCapturer()
+        let viewModel = makeViewModel(
+            apiKey: "sk-test",
+            settings: settings,
+            streamer: streamer
         )
         viewModel.queryText = "Long response"
 
@@ -132,12 +125,7 @@ final class ChatViewModelTests: XCTestCase {
     }
 
     func testNewChatResetsState() {
-        let viewModel = ChatViewModel(
-            apiKeyReader: MockAPIKeyReader(apiKey: "sk-test"),
-            settingsStore: MockSettingsStore(),
-            gptStreamer: MockStreamer(),
-            screenCapturer: MockScreenCapturer()
-        )
+        let viewModel = makeViewModel(apiKey: "sk-test")
         viewModel.queryText = "Question"
         viewModel.responseText = "Answer"
         viewModel.errorMessage = "Error"
@@ -148,6 +136,32 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.responseText, "")
         XCTAssertNil(viewModel.errorMessage)
         XCTAssertFalse(viewModel.isStreaming)
+    }
+
+    private func makeViewModel(
+        apiKey: String?,
+        settings: MockSettingsStore = MockSettingsStore(),
+        streamer: MockStreamer = MockStreamer(),
+        capturer: MockScreenCapturer = MockScreenCapturer()
+    ) -> ChatViewModel {
+        let dependencies = ChatViewModelDependencies(
+            readAPIKey: { _ in apiKey },
+            readSettingString: { key in settings.string(forKey: key) },
+            readSettingObject: { key in settings.object(forKey: key) },
+            writeSetting: { value, key in settings.set(value, forKey: key) },
+            stream: { messages, model, key in
+                streamer.capturedMessages = messages
+                streamer.capturedModel = model
+                streamer.capturedAPIKey = key
+                return streamer.streamToReturn
+            },
+            captureScreen: {
+                capturer.callCount += 1
+                return capturer.data
+            }
+        )
+
+        return ChatViewModel(dependencies: dependencies)
     }
 
     private func waitUntil(
@@ -197,19 +211,7 @@ final class ChatViewModelTests: XCTestCase {
     }
 }
 
-private final class MockAPIKeyReader: APIKeyReading {
-    private let apiKey: String?
-
-    init(apiKey: String?) {
-        self.apiKey = apiKey
-    }
-
-    func read(key: String) -> String? {
-        apiKey
-    }
-}
-
-private final class MockSettingsStore: SettingsStoring {
+private final class MockSettingsStore {
     private var values: [String: Any]
 
     init(values: [String: Any] = [:]) {
@@ -229,36 +231,20 @@ private final class MockSettingsStore: SettingsStoring {
     }
 }
 
-private final class MockStreamer: GPTStreaming {
+private final class MockStreamer {
     var capturedMessages: [GPTMessage]?
     var capturedModel: String?
     var capturedAPIKey: String?
     var streamToReturn: AsyncThrowingStream<String, Error> = AsyncThrowingStream { continuation in
         continuation.finish()
     }
-
-    func stream(
-        messages: [GPTMessage],
-        model: String,
-        apiKey: String
-    ) -> AsyncThrowingStream<String, Error> {
-        capturedMessages = messages
-        capturedModel = model
-        capturedAPIKey = apiKey
-        return streamToReturn
-    }
 }
 
-private final class MockScreenCapturer: ScreenCapturing {
-    private let data: Data?
-    private(set) var callCount: Int = 0
+private final class MockScreenCapturer {
+    let data: Data?
+    var callCount: Int = 0
 
     init(data: Data? = nil) {
         self.data = data
-    }
-
-    func captureFullScreen() async -> Data? {
-        callCount += 1
-        return data
     }
 }
