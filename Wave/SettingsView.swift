@@ -2,17 +2,9 @@ import SwiftUI
 
 struct SettingsView: View {
     @State private var apiKey: String = ""
-    @State private var selectedModel: String = "gpt-4o"
+    @State private var selectedModel: GPTModel = .default
     @State private var screenshotEnabled: Bool = true
     @State private var keySaved: Bool = false
-
-    private let models = [
-        "gpt-4o",
-        "gpt-4o-mini",
-        "gpt-4.1",
-        "gpt-4.1-mini",
-        "gpt-4.1-nano"
-    ]
 
     var body: some View {
         Form {
@@ -33,12 +25,12 @@ struct SettingsView: View {
 
             Section("Model") {
                 Picker("GPT Model", selection: $selectedModel) {
-                    ForEach(models, id: \.self) { model in
-                        Text(model).tag(model)
+                    ForEach(GPTModel.allModels) { model in
+                        Text(model.displayName).tag(model)
                     }
                 }
                 .onChange(of: selectedModel) { _, value in
-                    UserDefaults.standard.set(value, forKey: "gpt_model")
+                    UserDefaults.standard.set(value.rawValue, forKey: "gpt_model")
                 }
             }
 
@@ -55,11 +47,12 @@ struct SettingsView: View {
             Section("Keyboard Shortcuts") {
                 LabeledContent("Toggle Wave") { Text("**\u{2318}`**").foregroundStyle(.secondary) }
                 LabeledContent("New Chat") { Text("**\u{2318}N**").foregroundStyle(.secondary) }
+                LabeledContent("Model Selector") { Text("**\u{2318}\u{21E7}M**").foregroundStyle(.secondary) }
                 LabeledContent("Hide") { Text("**Esc**").foregroundStyle(.secondary) }
             }
         }
         .formStyle(.grouped)
-        .frame(width: 420, height: 380)
+        .frame(width: 420, height: 400)
         .onAppear(perform: loadSettings)
     }
 
@@ -73,7 +66,7 @@ struct SettingsView: View {
 
     private func loadSettings() {
         apiKey = KeychainHelper.read(key: "openai_api_key") ?? ""
-        selectedModel = UserDefaults.standard.string(forKey: "gpt_model") ?? "gpt-4o"
+        selectedModel = GPTModel.from(rawValue: UserDefaults.standard.string(forKey: "gpt_model"))
         screenshotEnabled = UserDefaults.standard.object(forKey: "screenshot_enabled") as? Bool ?? true
     }
 }

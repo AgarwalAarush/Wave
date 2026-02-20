@@ -58,6 +58,21 @@ extension Color {
         light: Color(hex: 0xAAAAAA),
         dark: Color(hex: 0x5A5A5A)
     )
+
+    static let waveModelPill = Color(
+        light: Color.black.opacity(0.05),
+        dark: Color.white.opacity(0.08)
+    )
+
+    static let waveModelHighlight = Color(
+        light: Color.black.opacity(0.08),
+        dark: Color.white.opacity(0.12)
+    )
+
+    static let waveDropdownBackground = Color(
+        light: Color(hex: 0xEBE9E4),
+        dark: Color(hex: 0x3A3732)
+    )
 }
 
 // MARK: - Hex Initializer

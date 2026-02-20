@@ -15,10 +15,16 @@ struct ContentView: View {
     @Bindable var viewModel: ChatViewModel
     @Environment(\.dismissPanel) private var dismissPanel
     @FocusState private var inputFocused: Bool
+    @State private var showModelPicker = false
+    @State private var highlightedModelIndex: Int = 0
 
     var body: some View {
         VStack(spacing: 0) {
             queryBar
+            if showModelPicker {
+                modelDropdown
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
             if viewModel.hasResponse || viewModel.errorMessage != nil {
                 Color.waveDivider.frame(height: 1)
                 responseArea
@@ -36,15 +42,41 @@ struct ContentView: View {
         .shadow(color: Color.waveShadow, radius: 20, y: 8)
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: viewModel.hasResponse)
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: viewModel.errorMessage != nil)
+        .animation(.spring(response: 0.25, dampingFraction: 0.9), value: showModelPicker)
         .onAppear { inputFocused = true }
         .onKeyPress(.escape) {
+            if showModelPicker {
+                showModelPicker = false
+                return .handled
+            }
             dismissPanel()
             return .handled
         }
         .onKeyPress(characters: .init(charactersIn: "n"), phases: .down) { press in
-            guard press.modifiers.contains(.command) else { return .ignored }
+            guard press.modifiers.contains(.command), !showModelPicker else { return .ignored }
             viewModel.newChat()
             inputFocused = true
+            return .handled
+        }
+        .onKeyPress(characters: .init(charactersIn: "m"), phases: .down) { press in
+            guard press.modifiers.contains(.command),
+                  press.modifiers.contains(.shift) else { return .ignored }
+            toggleModelPicker()
+            return .handled
+        }
+        .onKeyPress(.upArrow) {
+            guard showModelPicker else { return .ignored }
+            highlightedModelIndex = max(0, highlightedModelIndex - 1)
+            return .handled
+        }
+        .onKeyPress(.downArrow) {
+            guard showModelPicker else { return .ignored }
+            highlightedModelIndex = min(GPTModel.allModels.count - 1, highlightedModelIndex + 1)
+            return .handled
+        }
+        .onKeyPress(.return) {
+            guard showModelPicker else { return .ignored }
+            selectHighlightedModel()
             return .handled
         }
     }
@@ -62,7 +94,12 @@ struct ContentView: View {
                 .font(.system(size: 15))
                 .foregroundStyle(Color.waveTextPrimary)
                 .focused($inputFocused)
-                .onSubmit { viewModel.submit() }
+                .onSubmit {
+                    guard !showModelPicker else { return }
+                    viewModel.submit()
+                }
+
+            modelPill
 
             if viewModel.isStreaming {
                 Button { viewModel.stopStreaming() } label: {
@@ -79,6 +116,77 @@ struct ContentView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
+    }
+
+    // MARK: - Model Pill
+
+    private var modelPill: some View {
+        Button { toggleModelPicker() } label: {
+            Text(viewModel.selectedModel.displayName)
+                .font(.system(size: 11, weight: .medium, design: .rounded))
+                .foregroundStyle(Color.waveTextSecondary)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(Color.waveModelPill, in: Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Model Dropdown
+
+    private var modelDropdown: some View {
+        VStack(spacing: 0) {
+            Color.waveDivider.frame(height: 1)
+            VStack(alignment: .leading, spacing: 2) {
+                ForEach(Array(GPTModel.allModels.enumerated()), id: \.element.id) { index, model in
+                    Button {
+                        viewModel.selectedModel = model
+                        showModelPicker = false
+                    } label: {
+                        HStack {
+                            Text(model.displayName)
+                                .font(.system(size: 13, weight: .medium, design: .rounded))
+                                .foregroundStyle(Color.waveTextPrimary)
+                            Spacer()
+                            if model == viewModel.selectedModel {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .foregroundStyle(Color.waveTextSecondary)
+                            }
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .background(
+                            index == highlightedModelIndex
+                                ? Color.waveModelHighlight
+                                : Color.clear,
+                            in: RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+        }
+    }
+
+    // MARK: - Model Picker Logic
+
+    private func toggleModelPicker() {
+        if showModelPicker {
+            showModelPicker = false
+        } else {
+            highlightedModelIndex = GPTModel.allModels.firstIndex(of: viewModel.selectedModel) ?? 0
+            showModelPicker = true
+        }
+    }
+
+    private func selectHighlightedModel() {
+        let models = GPTModel.allModels
+        guard highlightedModelIndex >= 0, highlightedModelIndex < models.count else { return }
+        viewModel.selectedModel = models[highlightedModelIndex]
+        showModelPicker = false
     }
 
     // MARK: - Response Area

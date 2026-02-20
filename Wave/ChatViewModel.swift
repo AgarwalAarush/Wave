@@ -10,7 +10,16 @@ final class ChatViewModel {
     var errorMessage: String?
     var hasResponse: Bool { !responseText.isEmpty || isStreaming }
 
+    var selectedModel: GPTModel {
+        didSet { UserDefaults.standard.set(selectedModel.rawValue, forKey: "gpt_model") }
+    }
+
     private var streamTask: Task<Void, Never>?
+
+    init() {
+        let stored = UserDefaults.standard.string(forKey: "gpt_model")
+        self.selectedModel = GPTModel.from(rawValue: stored)
+    }
 
     // MARK: - Actions
 
@@ -27,7 +36,7 @@ final class ChatViewModel {
         isStreaming = true
         responseText = ""
 
-        let model = UserDefaults.standard.string(forKey: "gpt_model") ?? "gpt-4o"
+        let model = selectedModel.rawValue
         let screenshotEnabled = UserDefaults.standard.object(forKey: "screenshot_enabled") as? Bool ?? true
 
         streamTask = Task {
