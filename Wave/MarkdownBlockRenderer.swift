@@ -60,20 +60,25 @@ struct MarkdownBlockRenderer {
             lastBlockID = blockID
         }
 
-        let blocks: [MarkdownRenderedBlock] = orderedBlockIDs.compactMap { id in
-            guard let accumulator = blockByID[id] else { return nil }
-            guard !accumulator.content.characters.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-                return nil
+        var blocks: [MarkdownRenderedBlock] = []
+        for id in orderedBlockIDs {
+            guard let accumulator = blockByID[id] else { continue }
+
+            let plainText = String(accumulator.content.characters)
+            guard !plainText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                continue
             }
 
             if let kind = accumulator.listKind {
-                return .listItem(
-                    kind: kind,
-                    depth: max(accumulator.depth, 1),
-                    content: accumulator.content
+                blocks.append(
+                    .listItem(
+                        kind: kind,
+                        depth: max(accumulator.depth, 1),
+                        content: accumulator.content
+                    )
                 )
             } else {
-                return .paragraph(content: accumulator.content)
+                blocks.append(.paragraph(content: accumulator.content))
             }
         }
 
