@@ -15,7 +15,7 @@ extension Color {
 
 extension Color {
     static let wavePanelBackground = Color(
-        light: Color(hex: 0xF5F3EF),
+        light: Color(hex: 0xFFFFFF),
         dark: Color(hex: 0x2F2C27)
     )
 
