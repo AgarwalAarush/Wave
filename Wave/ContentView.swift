@@ -41,7 +41,7 @@ struct ContentView: View {
             dismissPanel()
             return .handled
         }
-        .onKeyPress(characters: .init("n"), phases: .down) { press in
+        .onKeyPress(characters: .init(charactersIn: "n"), phases: .down) { press in
             guard press.modifiers.contains(.command) else { return .ignored }
             viewModel.newChat()
             inputFocused = true
