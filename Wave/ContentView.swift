@@ -53,7 +53,9 @@ struct ContentView: View {
         }
         .onKeyPress(characters: .init(charactersIn: "n"), phases: .down) { press in
             guard press.modifiers.contains(.command), !showModelPicker else { return .ignored }
-            viewModel.newChat()
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                viewModel.newChat()
+            }
             inputFocused = true
             return .handled
         }
@@ -169,11 +171,13 @@ struct ContentView: View {
     // MARK: - Model Picker Logic
 
     private func toggleModelPicker() {
-        if showModelPicker {
-            showModelPicker = false
-        } else {
-            highlightedModelIndex = GPTModel.allModels.firstIndex(of: viewModel.selectedModel) ?? 0
-            showModelPicker = true
+        withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
+            if showModelPicker {
+                showModelPicker = false
+            } else {
+                highlightedModelIndex = GPTModel.allModels.firstIndex(of: viewModel.selectedModel) ?? 0
+                showModelPicker = true
+            }
         }
     }
 
@@ -181,7 +185,9 @@ struct ContentView: View {
         let models = GPTModel.allModels
         guard highlightedModelIndex >= 0, highlightedModelIndex < models.count else { return }
         viewModel.selectedModel = models[highlightedModelIndex]
-        showModelPicker = false
+        withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
+            showModelPicker = false
+        }
     }
 
     // MARK: - Response Area
