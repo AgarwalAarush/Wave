@@ -17,6 +17,12 @@ final class GPTService: @unchecked Sendable {
 
     private let baseURL = URL(string: "https://api.openai.com/v1/chat/completions")!
 
+    enum StreamParseResult: Equatable {
+        case content(String)
+        case done
+        case ignore
+    }
+
     func stream(
         messages: [GPTMessage],
         model: String,
@@ -39,19 +45,15 @@ final class GPTService: @unchecked Sendable {
                         return
                     }
 
-                    for try await line in bytes.lines {
-                        guard line.hasPrefix("data: ") else { continue }
-                        let payload = String(line.dropFirst(6))
-                        if payload == "[DONE]" { break }
-
-                        guard let data = payload.data(using: .utf8),
-                              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                              let choices = json["choices"] as? [[String: Any]],
-                              let delta = choices.first?["delta"] as? [String: Any],
-                              let content = delta["content"] as? String
-                        else { continue }
-
-                        continuation.yield(content)
+                    lineLoop: for try await line in bytes.lines {
+                        switch Self.parseStreamLine(line) {
+                        case .content(let content):
+                            continuation.yield(content)
+                        case .done:
+                            break lineLoop
+                        case .ignore:
+                            continue
+                        }
                     }
 
                     continuation.finish()
@@ -62,7 +64,24 @@ final class GPTService: @unchecked Sendable {
         }
     }
 
-    private func buildRequest(messages: [GPTMessage], model: String, apiKey: String) throws -> URLRequest {
+    static func parseStreamLine(_ line: String) -> StreamParseResult {
+        guard line.hasPrefix("data: ") else { return .ignore }
+        let payload = String(line.dropFirst(6))
+        if payload == "[DONE]" { return .done }
+
+        guard let data = payload.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let choices = json["choices"] as? [[String: Any]],
+              let delta = choices.first?["delta"] as? [String: Any],
+              let content = delta["content"] as? String
+        else {
+            return .ignore
+        }
+
+        return .content(content)
+    }
+
+    func buildRequest(messages: [GPTMessage], model: String, apiKey: String) throws -> URLRequest {
         var jsonMessages: [[String: Any]] = []
 
         for msg in messages {
