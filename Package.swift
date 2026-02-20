@@ -22,6 +22,7 @@ let package = Package(
                 "ContentView.swift",
                 "HotKeyManager.swift",
                 "SettingsView.swift",
+                "SettingsWindow.swift",
                 "Theme.swift",
                 "Wave.entitlements",
                 "WaveApp.swift",

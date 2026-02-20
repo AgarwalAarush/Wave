@@ -34,7 +34,6 @@ final class AnthropicService: @unchecked Sendable {
                         return
                     }
 
-                    var currentEvent = ""
                     var eventType = ""
 
                     lineLoop: for try await line in bytes.lines {

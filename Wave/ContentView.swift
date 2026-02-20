@@ -72,7 +72,8 @@ struct ContentView: View {
         }
         .onKeyPress(.downArrow) {
             guard showModelPicker else { return .ignored }
-            highlightedModelIndex = min(GPTModel.allModels.count - 1, highlightedModelIndex + 1)
+            let models = AIModel.models(for: viewModel.selectedModel.provider)
+            highlightedModelIndex = min(models.count - 1, highlightedModelIndex + 1)
             return .handled
         }
         .onKeyPress(.return) {
@@ -135,10 +136,11 @@ struct ContentView: View {
     // MARK: - Model Dropdown
 
     private var modelDropdown: some View {
-        VStack(spacing: 0) {
+        let models = AIModel.models(for: viewModel.selectedModel.provider)
+        return VStack(spacing: 0) {
             Color.waveDivider.frame(height: 1)
             VStack(alignment: .leading, spacing: 2) {
-                ForEach(Array(GPTModel.allModels.enumerated()), id: \.element.id) { index, model in
+                ForEach(Array(models.enumerated()), id: \.element.id) { index, model in
                     Button {
                         viewModel.selectedModel = model
                         showModelPicker = false
@@ -178,14 +180,15 @@ struct ContentView: View {
             if showModelPicker {
                 showModelPicker = false
             } else {
-                highlightedModelIndex = GPTModel.allModels.firstIndex(of: viewModel.selectedModel) ?? 0
+                let models = AIModel.models(for: viewModel.selectedModel.provider)
+                highlightedModelIndex = models.firstIndex(of: viewModel.selectedModel) ?? 0
                 showModelPicker = true
             }
         }
     }
 
     private func selectHighlightedModel() {
-        let models = GPTModel.allModels
+        let models = AIModel.models(for: viewModel.selectedModel.provider)
         guard highlightedModelIndex >= 0, highlightedModelIndex < models.count else { return }
         viewModel.selectedModel = models[highlightedModelIndex]
         withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {

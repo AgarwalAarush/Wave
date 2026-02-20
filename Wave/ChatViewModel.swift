@@ -58,6 +58,7 @@ final class ChatViewModel: ObservableObject {
         self.dependencies = resolved
 
         let stored = resolved.readSettingString("ai_model")
+            ?? resolved.readSettingString("gpt_model")
         self.selectedModel = AIModel.fromStored(stored)
     }
 

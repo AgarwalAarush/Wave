@@ -4,13 +4,13 @@ import XCTest
 final class ChatViewModelTests: XCTestCase {
     @MainActor
     func testInitUsesStoredModel() {
-        let settings = MockSettingsStore(values: ["gpt_model": GPTModel.full.rawValue])
+        let settings = MockSettingsStore(values: ["ai_model": AIModel.gptFull.rawValue])
         let viewModel = makeViewModel(
             apiKey: "sk-test",
             settings: settings
         )
 
-        XCTAssertEqual(viewModel.selectedModel, .full)
+        XCTAssertEqual(viewModel.selectedModel, .gptFull)
     }
 
     @MainActor
@@ -21,8 +21,8 @@ final class ChatViewModelTests: XCTestCase {
             settings: settings
         )
 
-        viewModel.selectedModel = .codex
-        XCTAssertEqual(settings.string(forKey: "gpt_model"), GPTModel.codex.rawValue)
+        viewModel.selectedModel = .gptCodex
+        XCTAssertEqual(settings.string(forKey: "ai_model"), AIModel.gptCodex.rawValue)
     }
 
     @MainActor
@@ -156,7 +156,7 @@ final class ChatViewModelTests: XCTestCase {
             readSettingString: { key in settings.string(forKey: key) },
             readSettingObject: { key in settings.object(forKey: key) },
             writeSetting: { value, key in settings.set(value, forKey: key) },
-            stream: { messages, model, key in
+            stream: { messages, model, key, _ in
                 streamer.capturedMessages = messages
                 streamer.capturedModel = model
                 streamer.capturedAPIKey = key
