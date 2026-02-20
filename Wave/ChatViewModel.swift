@@ -46,11 +46,11 @@ final class ChatViewModel {
         didSet { settingsStore.set(selectedModel.rawValue, forKey: "gpt_model") }
     }
 
-    private var streamTask: Task<Void, Never>?
-    private let apiKeyReader: APIKeyReading
-    private let settingsStore: SettingsStoring
-    private let gptStreamer: GPTStreaming
-    private let screenCapturer: ScreenCapturing
+    @ObservationIgnored private var streamTask: Task<Void, Never>?
+    @ObservationIgnored private let apiKeyReader: APIKeyReading
+    @ObservationIgnored private let settingsStore: SettingsStoring
+    @ObservationIgnored private let gptStreamer: GPTStreaming
+    @ObservationIgnored private let screenCapturer: ScreenCapturing
 
     init(
         apiKeyReader: APIKeyReading = SystemAPIKeyReader(),

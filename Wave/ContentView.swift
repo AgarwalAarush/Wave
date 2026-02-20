@@ -23,6 +23,7 @@ struct ContentView: View {
             queryBar
             if showModelPicker {
                 modelDropdown
+                    .transition(.opacity.combined(with: .move(edge: .top)))
             }
             if viewModel.hasResponse || viewModel.errorMessage != nil {
                 Color.waveDivider.frame(height: 1)
@@ -41,7 +42,6 @@ struct ContentView: View {
         .shadow(color: Color.waveShadow, radius: 20, y: 8)
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: viewModel.hasResponse)
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: viewModel.errorMessage != nil)
-        .animation(.spring(response: 0.25, dampingFraction: 0.9), value: showModelPicker)
         .onAppear { inputFocused = true }
         .onKeyPress(.escape) {
             if showModelPicker {
@@ -57,7 +57,7 @@ struct ContentView: View {
             inputFocused = true
             return .handled
         }
-        .onKeyPress(characters: .init(charactersIn: "m"), phases: .down) { press in
+        .onKeyPress(characters: .init(charactersIn: "mM"), phases: .down) { press in
             guard press.modifiers.contains(.command),
                   press.modifiers.contains(.shift) else { return .ignored }
             toggleModelPicker()

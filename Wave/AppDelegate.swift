@@ -6,8 +6,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var panel: WavePanel!
     private let chatViewModel = ChatViewModel()
     private var statusItem: NSStatusItem?
+    private let isRunningTests = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        guard !isRunningTests else { return }
         setupPanel()
         setupMenuBarItem()
         HotKeyManager.shared.onToggle = { [weak self] in self?.toggle() }

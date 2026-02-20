@@ -3,6 +3,7 @@ import AppKit
 final class WavePanel: NSPanel {
 
     private var pinnedTopY: CGFloat?
+    private var pinnedX: CGFloat?
 
     init() {
         super.init(
@@ -32,30 +33,25 @@ final class WavePanel: NSPanel {
         let x = screenFrame.origin.x + (screenFrame.width - frame.width) / 2
         let topY = screenFrame.origin.y + screenFrame.height - 8
         pinnedTopY = topY
+        pinnedX = x
         setFrameOrigin(NSPoint(x: x, y: topY - frame.height))
     }
 
     /// Keep the top edge pinned so the panel grows downward when content height changes.
     override func setFrame(_ frameRect: NSRect, display flag: Bool) {
         var rect = frameRect
-        if let topY = pinnedTopY {
+        if let topY = pinnedTopY, let x = pinnedX {
             rect.origin.y = topY - rect.size.height
-            if let screen = NSScreen.main {
-                let sf = screen.visibleFrame
-                rect.origin.x = sf.origin.x + (sf.width - rect.size.width) / 2
-            }
+            rect.origin.x = x
         }
         super.setFrame(rect, display: flag)
     }
 
     override func setFrame(_ frameRect: NSRect, display displayFlag: Bool, animate animateFlag: Bool) {
         var rect = frameRect
-        if let topY = pinnedTopY {
+        if let topY = pinnedTopY, let x = pinnedX {
             rect.origin.y = topY - rect.size.height
-            if let screen = NSScreen.main {
-                let sf = screen.visibleFrame
-                rect.origin.x = sf.origin.x + (sf.width - rect.size.width) / 2
-            }
+            rect.origin.x = x
         }
         super.setFrame(rect, display: displayFlag, animate: animateFlag)
     }

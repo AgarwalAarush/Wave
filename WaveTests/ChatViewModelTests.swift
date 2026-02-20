@@ -71,8 +71,8 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertEqual(streamer.capturedAPIKey, "sk-test")
 
         let messages = try? XCTUnwrap(streamer.capturedMessages)
-        XCTAssertEqual(messages??.count, 2)
-        let userMessage = messages??.last
+        XCTAssertEqual(messages?.count, 2)
+        let userMessage = messages?.last
         let hasImage = userMessage?.content.contains(where: {
             if case .imageData = $0 { return true }
             return false
@@ -98,11 +98,11 @@ final class ChatViewModelTests: XCTestCase {
 
         XCTAssertEqual(capturer.callCount, 1)
         let userMessage = try? XCTUnwrap(streamer.capturedMessages?.last)
-        let hasImage = userMessage??.content.contains(where: {
+        let hasImage = userMessage?.content.contains(where: {
             if case .imageData = $0 { return true }
             return false
         }) ?? false
-        let hasText = userMessage??.content.contains(where: {
+        let hasText = userMessage?.content.contains(where: {
             if case .text("Use screenshot") = $0 { return true }
             return false
         }) ?? false
