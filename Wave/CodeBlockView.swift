@@ -5,7 +5,6 @@ struct CodeBlockView: View {
     let language: String?
     let code: String
 
-    @State private var isHovering = false
     @State private var showCopied = false
 
     var body: some View {
@@ -22,7 +21,7 @@ struct CodeBlockView: View {
                     copyToClipboard()
                 } label: {
                     HStack(spacing: 4) {
-                        Image(systemName: showCopied ? "checkmark" : "doc.on.doc")
+                        Image(systemName: showCopied ? "checkmark" : "square.on.square")
                             .font(.system(size: 10, weight: .medium))
                         if showCopied {
                             Text("Copied!")
@@ -32,8 +31,6 @@ struct CodeBlockView: View {
                     .foregroundStyle(showCopied ? Color.waveAccent : Color.waveCodeText.opacity(0.6))
                 }
                 .buttonStyle(.plain)
-                .opacity(isHovering || showCopied ? 1 : 0)
-                .animation(.easeInOut(duration: 0.15), value: isHovering)
                 .animation(.easeInOut(duration: 0.15), value: showCopied)
             }
             .padding(.horizontal, 12)
@@ -45,7 +42,8 @@ struct CodeBlockView: View {
                 Text(SyntaxHighlighter.highlight(code: code, language: language))
                     .font(.system(size: 12, design: .monospaced))
                     .textSelection(.enabled)
-                    .padding(12)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .background(Color.waveCodeBackground)
@@ -53,11 +51,8 @@ struct CodeBlockView: View {
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.1), lineWidth: 0.5)
+                .strokeBorder(Color.waveBorder, lineWidth: 0.5)
         )
-        .onHover { hovering in
-            isHovering = hovering
-        }
     }
 
     private var displayLanguage: String {

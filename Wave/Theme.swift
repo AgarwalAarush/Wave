@@ -102,52 +102,52 @@ extension Color {
     // MARK: - Code Block Colors
 
     static let waveCodeBackground = Color(
-        light: Color(hex: 0x1E1E1E),
+        light: Color(hex: 0xF5F5F5),
         dark: Color(hex: 0x1E1E1E)
     )
 
     static let waveCodeHeader = Color(
-        light: Color(hex: 0x2D2D2D),
+        light: Color(hex: 0xE8E8E8),
         dark: Color(hex: 0x2D2D2D)
     )
 
     static let waveCodeText = Color(
-        light: Color(hex: 0xD4D4D4),
+        light: Color(hex: 0x1A1A1A),
         dark: Color(hex: 0xD4D4D4)
     )
 
     static let waveCodeKeyword = Color(
-        light: Color(hex: 0xC586C0),
+        light: Color(hex: 0xAF00DB),
         dark: Color(hex: 0xC586C0)
     )
 
     static let waveCodeString = Color(
-        light: Color(hex: 0xCE9178),
+        light: Color(hex: 0xA31515),
         dark: Color(hex: 0xCE9178)
     )
 
     static let waveCodeComment = Color(
-        light: Color(hex: 0x6A9955),
+        light: Color(hex: 0x008000),
         dark: Color(hex: 0x6A9955)
     )
 
     static let waveCodeNumber = Color(
-        light: Color(hex: 0xB5CEA8),
+        light: Color(hex: 0x098658),
         dark: Color(hex: 0xB5CEA8)
     )
 
     static let waveCodeType = Color(
-        light: Color(hex: 0x4EC9B0),
+        light: Color(hex: 0x267F99),
         dark: Color(hex: 0x4EC9B0)
     )
 
     static let waveCodeFunction = Color(
-        light: Color(hex: 0xDCDCAA),
+        light: Color(hex: 0x795E26),
         dark: Color(hex: 0xDCDCAA)
     )
 
     static let waveCodePreprocessor = Color(
-        light: Color(hex: 0x9CDCFE),
+        light: Color(hex: 0x0000FF),
         dark: Color(hex: 0x9CDCFE)
     )
 }
