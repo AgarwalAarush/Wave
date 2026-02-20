@@ -14,19 +14,28 @@ enum SettingsTab: String, CaseIterable {
         case .shortcuts: return "keyboard.fill"
         }
     }
+
+    var subtitle: String {
+        switch self {
+        case .general: return "API keys and account"
+        case .model: return "Choose your AI model"
+        case .context: return "Screen capture behavior"
+        case .shortcuts: return "Keyboard shortcuts"
+        }
+    }
 }
 
 struct SettingsView: View {
     @State private var selectedTab: SettingsTab = .general
 
     var body: some View {
-        NavigationSplitView {
+        HStack(spacing: 0) {
             SidebarView(selectedTab: $selectedTab)
-        } detail: {
             DetailView(selectedTab: selectedTab)
         }
-        .frame(width: 600, height: 420)
+        .frame(width: 620, height: 440)
         .background(Color.waveSettingsBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }
 
@@ -36,16 +45,31 @@ struct SidebarView: View {
     @Binding var selectedTab: SettingsTab
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 7) {
+                Image(systemName: "wave.3.right")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(Color.waveAccent)
+                Text("Wave")
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.waveTextPrimary)
+            }
+            .padding(.horizontal, 12)
+            .padding(.top, 16)
+            .padding(.bottom, 12)
+
             ForEach(SettingsTab.allCases, id: \.self) { tab in
                 SidebarRow(tab: tab, isSelected: selectedTab == tab)
-                    .onTapGesture { selectedTab = tab }
+                    .onTapGesture {
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            selectedTab = tab
+                        }
+                    }
             }
             Spacer()
         }
-        .padding(.top, 8)
         .padding(.horizontal, 8)
-        .frame(minWidth: 160)
+        .frame(width: 170)
         .background(Color.waveSettingsSidebar)
     }
 }
@@ -53,27 +77,33 @@ struct SidebarView: View {
 struct SidebarRow: View {
     let tab: SettingsTab
     let isSelected: Bool
+    @State private var isHovered = false
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 9) {
             Image(systemName: tab.icon)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(isSelected ? Color.white : Color.waveAccent)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(isSelected ? Color.waveAccent : Color.waveTextSecondary)
                 .frame(width: 20)
 
             Text(tab.rawValue)
                 .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
-                .foregroundStyle(isSelected ? Color.white : Color.waveTextPrimary)
+                .foregroundStyle(isSelected ? Color.waveTextPrimary : Color.waveTextSecondary)
 
             Spacer()
         }
         .padding(.horizontal, 10)
-        .padding(.vertical, 8)
+        .padding(.vertical, 7)
         .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(isSelected ? Color.waveAccent : Color.clear)
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .fill(isSelected
+                      ? Color.waveAccent.opacity(0.12)
+                      : isHovered ? Color.waveSettingsRowHover.opacity(0.5) : Color.clear)
         )
         .contentShape(Rectangle())
+        .onHover { hovering in
+            isHovered = hovering
+        }
     }
 }
 
@@ -85,13 +115,17 @@ struct DetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                // Header
-                Text(selectedTab.rawValue)
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(Color.waveTextPrimary)
-                    .padding(.bottom, 20)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(selectedTab.rawValue)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(Color.waveTextPrimary)
 
-                // Content
+                    Text(selectedTab.subtitle)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.waveTextSecondary)
+                }
+                .padding(.bottom, 20)
+
                 switch selectedTab {
                 case .general:
                     GeneralSettingsView()
@@ -107,6 +141,7 @@ struct DetailView: View {
             }
             .padding(24)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.waveSettingsBackground)
     }
 }
@@ -122,9 +157,27 @@ struct GeneralSettingsView: View {
     var body: some View {
         SettingsCard {
             VStack(alignment: .leading, spacing: 16) {
-                Text("OpenAI API Key")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Color.waveTextPrimary)
+                HStack(spacing: 12) {
+                    Image(systemName: "key.fill")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(Color.waveAccent)
+                        .frame(width: 36, height: 36)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(Color.waveAccent.opacity(0.1))
+                        )
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("OpenAI API Key")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Color.waveTextPrimary)
+                        Text("Required to connect to OpenAI")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.waveTextSecondary)
+                    }
+                }
+
+                Color.waveDivider.frame(height: 1)
 
                 if hasStoredKey && !isEditingKey {
                     // Key is stored - show masked version with replace button
@@ -224,9 +277,16 @@ struct GeneralSettingsView: View {
                     }
                 }
 
-                Text("Your API key is stored securely in the system keychain.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color.waveTextSecondary)
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "lock.shield")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.waveTextSecondary)
+                        .padding(.top, 1)
+                    Text("Your API key is stored securely in the system keychain and never leaves your device.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.waveTextSecondary)
+                        .lineSpacing(2)
+                }
             }
         }
         .onAppear { loadAPIKeyStatus() }
@@ -262,9 +322,27 @@ struct ModelSettingsView: View {
     var body: some View {
         SettingsCard {
             VStack(alignment: .leading, spacing: 16) {
-                Text("GPT Model")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Color.waveTextPrimary)
+                HStack(spacing: 12) {
+                    Image(systemName: "cpu.fill")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(Color.waveAccent)
+                        .frame(width: 36, height: 36)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(Color.waveAccent.opacity(0.1))
+                        )
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("GPT Model")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Color.waveTextPrimary)
+                        Text("Pick the model that fits your workflow")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.waveTextSecondary)
+                    }
+                }
+
+                Color.waveDivider.frame(height: 1)
 
                 VStack(spacing: 8) {
                     ForEach(GPTModel.allModels) { model in
@@ -279,9 +357,16 @@ struct ModelSettingsView: View {
                     }
                 }
 
-                Text("Select the OpenAI model to use for responses. More capable models may be slower and cost more.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color.waveTextSecondary)
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.waveTextSecondary)
+                        .padding(.top, 1)
+                    Text("More capable models produce better results but may respond slower and cost more per query.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.waveTextSecondary)
+                        .lineSpacing(2)
+                }
             }
         }
         .onAppear {
@@ -294,14 +379,27 @@ struct ModelRow: View {
     let model: GPTModel
     let isSelected: Bool
     let onSelect: () -> Void
+    @State private var isHovered = false
 
     var body: some View {
         Button(action: onSelect) {
-            HStack {
+            HStack(spacing: 12) {
+                Image(systemName: model.icon)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(isSelected ? Color.waveAccent : Color.waveTextSecondary)
+                    .frame(width: 28, height: 28)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(isSelected ? Color.waveAccent.opacity(0.12) : Color.waveSettingsBackground)
+                    )
+
                 VStack(alignment: .leading, spacing: 2) {
                     Text(model.displayName)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(Color.waveTextPrimary)
+                    Text(model.subtitle)
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.waveTextSecondary)
                 }
 
                 Spacer()
@@ -318,15 +416,18 @@ struct ModelRow: View {
             }
             .padding(12)
             .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(isSelected ? Color.waveAccent.opacity(0.1) : Color.waveSettingsBackground)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(isSelected ? Color.waveAccent.opacity(0.3) : Color.waveBorder, lineWidth: 1)
-                    )
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(isSelected
+                          ? Color.waveAccent.opacity(0.08)
+                          : isHovered ? Color.waveSettingsRowHover.opacity(0.4) : Color.waveSettingsBackground)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(isSelected ? Color.waveAccent.opacity(0.25) : Color.waveBorder, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
+        .onHover { hovering in isHovered = hovering }
     }
 }
 
@@ -338,6 +439,28 @@ struct ContextSettingsView: View {
     var body: some View {
         SettingsCard {
             VStack(alignment: .leading, spacing: 16) {
+                HStack(spacing: 12) {
+                    Image(systemName: "camera.viewfinder")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(Color.waveAccent)
+                        .frame(width: 36, height: 36)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(Color.waveAccent.opacity(0.1))
+                        )
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Screen Capture")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Color.waveTextPrimary)
+                        Text("Attach a screenshot with every prompt")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.waveTextSecondary)
+                    }
+                }
+
+                Color.waveDivider.frame(height: 1)
+
                 SettingsToggleRow(
                     title: "Capture screenshot automatically",
                     isOn: $screenshotEnabled,
@@ -346,9 +469,16 @@ struct ContextSettingsView: View {
                     }
                 )
 
-                Text("When enabled, Wave captures your screen before each query to give the model visual context.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color.waveTextSecondary)
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.waveTextSecondary)
+                        .padding(.top, 1)
+                    Text("When enabled, Wave captures your screen before each query to give the model visual context. The screenshot is sent alongside your prompt and is never stored.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.waveTextSecondary)
+                        .lineSpacing(2)
+                }
             }
         }
         .onAppear {
@@ -363,45 +493,60 @@ struct ShortcutsSettingsView: View {
     var body: some View {
         SettingsCard {
             VStack(spacing: 0) {
-                ShortcutRow(action: "Toggle Wave", shortcut: "⇧⌫", isLast: false)
-                ShortcutRow(action: "New Chat", shortcut: "⌘N", isLast: false)
-                ShortcutRow(action: "Model Selector", shortcut: "⌘⇧M", isLast: false)
-                ShortcutRow(action: "Hide", shortcut: "Esc", isLast: true)
+                ShortcutRow(icon: "rectangle.on.rectangle.angled", action: "Toggle Wave", keys: ["⇧", "⌫"], isLast: false)
+                ShortcutRow(icon: "plus.message", action: "New Chat", keys: ["⌘", "N"], isLast: false)
+                ShortcutRow(icon: "cpu", action: "Model Selector", keys: ["⌘", "⇧", "M"], isLast: false)
+                ShortcutRow(icon: "xmark.circle", action: "Hide", keys: ["esc"], isLast: true)
             }
         }
     }
 }
 
 struct ShortcutRow: View {
+    let icon: String
     let action: String
-    let shortcut: String
+    let keys: [String]
     let isLast: Bool
 
     var body: some View {
         VStack(spacing: 0) {
             HStack {
+                Image(systemName: icon)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Color.waveTextSecondary)
+                    .frame(width: 20)
+
                 Text(action)
                     .font(.system(size: 13))
                     .foregroundStyle(Color.waveTextPrimary)
 
                 Spacer()
 
-                Text(shortcut)
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                    .foregroundStyle(Color.waveTextSecondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.waveSettingsBackground)
-                    )
+                HStack(spacing: 4) {
+                    ForEach(keys, id: \.self) { key in
+                        Text(key)
+                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .foregroundStyle(Color.waveTextSecondary)
+                            .frame(minWidth: 22, minHeight: 22)
+                            .padding(.horizontal, 4)
+                            .background(
+                                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                    .fill(Color.waveSettingsBackground)
+                                    .shadow(color: Color.black.opacity(0.06), radius: 0, x: 0, y: 1)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                    .stroke(Color.waveBorder, lineWidth: 0.5)
+                            )
+                    }
+                }
             }
-            .padding(.vertical, 12)
+            .padding(.vertical, 10)
             .padding(.horizontal, 4)
 
             if !isLast {
-                Divider()
-                    .background(Color.waveDivider)
+                Color.waveDivider.frame(height: 1)
+                    .padding(.leading, 28)
             }
         }
     }
@@ -416,9 +561,13 @@ struct SettingsCard<Content: View>: View {
         content
             .padding(16)
             .background(
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .fill(Color.waveSettingsCard)
-                    .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+                    .shadow(color: Color.black.opacity(0.04), radius: 3, x: 0, y: 1)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(Color.waveBorder, lineWidth: 0.5)
             )
     }
 }

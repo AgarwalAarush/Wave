@@ -17,6 +17,24 @@ enum GPTModel: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
+    var subtitle: String {
+        switch self {
+        case .nano:  "Fastest responses, lightweight tasks"
+        case .mini:  "Balanced speed and capability"
+        case .full:  "Most capable, complex reasoning"
+        case .codex: "Optimized for code generation"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .nano:  "bolt.fill"
+        case .mini:  "scalemass.fill"
+        case .full:  "brain.head.profile.fill"
+        case .codex: "chevron.left.forwardslash.chevron.right"
+        }
+    }
+
     static let `default`: GPTModel = .mini
 
     static let allModels: [GPTModel] = GPTModel.allCases
