@@ -41,10 +41,11 @@ struct ChatViewModelDependencies {
 final class ChatViewModel: ObservableObject {
 
     @Published var queryText: String = ""
-    @Published var responseText: String = ""
+    @Published var messages: [ChatMessage] = []
+    @Published var streamingResponse: String = ""
     @Published var isStreaming: Bool = false
     @Published var errorMessage: String?
-    var hasResponse: Bool { !responseText.isEmpty || isStreaming }
+    var hasContent: Bool { !messages.isEmpty || isStreaming }
 
     @Published var selectedModel: AIModel {
         didSet { dependencies.writeSetting(selectedModel.rawValue, "ai_model") }
@@ -80,7 +81,8 @@ final class ChatViewModel: ObservableObject {
 
         errorMessage = nil
         isStreaming = true
-        responseText = ""
+        streamingResponse = ""
+        queryText = ""
 
         let model = selectedModel.rawValue
         let screenshotEnabled = dependencies.readSettingObject("screenshot_enabled") as? Bool ?? true
@@ -97,26 +99,47 @@ final class ChatViewModel: ObservableObject {
                 screenshotData = await dependencies.captureScreen()
             }
 
-            var contentParts: [GPTMessage.ContentPart] = []
-            if let data = screenshotData {
-                contentParts.append(.imageData(data, mimeType: "image/png"))
+            // Add user message to history
+            let userMessage = ChatMessage(role: .user, content: query, screenshot: screenshotData)
+            await MainActor.run {
+                self.messages.append(userMessage)
             }
-            contentParts.append(.text(query))
 
-            let messages: [GPTMessage] = [
+            // Build full conversation history for API
+            var apiMessages: [GPTMessage] = [
                 GPTMessage(role: .system, content: [
-                    .text("You are a helpful assistant. The user has shared a screenshot of their screen for context. Answer concisely and use markdown formatting where appropriate.")
-                ]),
-                GPTMessage(role: .user, content: contentParts)
+                    .text("You are a helpful assistant. The user may share screenshots of their screen for context. Answer concisely and use markdown formatting where appropriate.")
+                ])
             ]
 
-            do {
-                let stream = dependencies.stream(messages, model, apiKey, selectedModel.provider)
-                for try await chunk in stream {
-                    self.responseText += chunk
+            for msg in self.messages {
+                var contentParts: [GPTMessage.ContentPart] = []
+                if let screenshot = msg.screenshot {
+                    contentParts.append(.imageData(screenshot, mimeType: "image/png"))
                 }
+                contentParts.append(.text(msg.content))
+
+                let role: GPTMessage.Role = msg.role == .user ? .user : .assistant
+                apiMessages.append(GPTMessage(role: role, content: contentParts))
+            }
+
+            do {
+                let stream = dependencies.stream(apiMessages, model, apiKey, selectedModel.provider)
+                for try await chunk in stream {
+                    self.streamingResponse += chunk
+                }
+
+                // Add assistant response to history
+                let assistantMessage = ChatMessage(role: .assistant, content: self.streamingResponse)
+                self.messages.append(assistantMessage)
+                self.streamingResponse = ""
             } catch is CancellationError {
-                // Stopped by user
+                // Stopped by user - still save partial response if any
+                if !self.streamingResponse.isEmpty {
+                    let assistantMessage = ChatMessage(role: .assistant, content: self.streamingResponse)
+                    self.messages.append(assistantMessage)
+                    self.streamingResponse = ""
+                }
             } catch {
                 self.errorMessage = error.localizedDescription
             }
@@ -134,7 +157,8 @@ final class ChatViewModel: ObservableObject {
     func newChat() {
         stopStreaming()
         queryText = ""
-        responseText = ""
+        messages = []
+        streamingResponse = ""
         errorMessage = nil
         pendingScreenshot = nil
         hasManualScreenshot = false

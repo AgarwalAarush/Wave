@@ -15,16 +15,25 @@ enum SettingsPaletteLevel: Equatable {
 }
 
 enum SettingItem: CaseIterable, Equatable {
+    case appearance
     case screenshot
 
     var displayName: String {
         switch self {
+        case .appearance: "Appearance"
         case .screenshot: "Screenshot"
         }
     }
 
     var options: [SettingOption] {
         switch self {
+        case .appearance:
+            let current = UserDefaults.standard.string(forKey: "appearance") ?? "system"
+            return [
+                SettingOption(label: "Light", value: "light", isSelected: current == "light"),
+                SettingOption(label: "Dark", value: "dark", isSelected: current == "dark"),
+                SettingOption(label: "System", value: "system", isSelected: current == "system")
+            ]
         case .screenshot:
             let current = UserDefaults.standard.object(forKey: "screenshot_enabled") as? Bool ?? true
             return [
@@ -97,9 +106,9 @@ struct ContentView: View {
                 )
                 .transition(PaletteStyle.transition)
             }
-            if viewModel.hasResponse || viewModel.errorMessage != nil {
+            if viewModel.hasContent || viewModel.errorMessage != nil {
                 Color.waveDivider.frame(height: 1)
-                responseArea
+                conversationArea
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
@@ -112,7 +121,7 @@ struct ContentView: View {
                 .strokeBorder(Color.waveBorder, lineWidth: 0.5)
         )
         .shadow(color: Color.waveShadow, radius: 20, y: 8)
-        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: viewModel.hasResponse)
+        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: viewModel.hasContent)
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: viewModel.errorMessage != nil)
         .onAppear { inputFocused = true }
         .onKeyPress(.escape) {
@@ -520,6 +529,11 @@ struct ContentView: View {
 
     private func applySettingOption(_ setting: SettingItem, _ option: SettingOption) {
         switch setting {
+        case .appearance:
+            if let value = option.value as? String {
+                UserDefaults.standard.set(value, forKey: "appearance")
+                NotificationCenter.default.post(name: .appearanceChanged, object: nil)
+            }
         case .screenshot:
             if let value = option.value as? Bool {
                 UserDefaults.standard.set(value, forKey: "screenshot_enabled")
@@ -610,12 +624,12 @@ struct ContentView: View {
         }
     }
 
-    // MARK: - Response Area
+    // MARK: - Conversation Area
 
-    private var responseArea: some View {
+    private var conversationArea: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 12) {
                     if let error = viewModel.errorMessage {
                         Label(error, systemImage: "exclamationmark.triangle.fill")
                             .font(.waveSystem(size: 13))
@@ -624,13 +638,15 @@ struct ContentView: View {
                             .padding(.top, 8)
                     }
 
-                    if !viewModel.responseText.isEmpty {
-                        MarkdownContentView(text: viewModel.responseText)
-                            .padding(.horizontal, 16)
-                            .padding(.top, viewModel.errorMessage == nil ? 8 : 0)
+                    ForEach(viewModel.messages) { message in
+                        messageView(for: message)
                     }
 
-                    if viewModel.isStreaming {
+                    if viewModel.isStreaming && !viewModel.streamingResponse.isEmpty {
+                        assistantMessageView(content: viewModel.streamingResponse)
+                    }
+
+                    if viewModel.isStreaming && viewModel.streamingResponse.isEmpty {
                         HStack(spacing: 4) {
                             ProgressView()
                                 .controlSize(.small)
@@ -639,23 +655,59 @@ struct ContentView: View {
                                 .foregroundStyle(Color.waveTextSecondary)
                         }
                         .padding(.horizontal, 16)
-                        .padding(.top, 8)
-                        .opacity(viewModel.responseText.isEmpty ? 1 : 0)
+                        .padding(.top, 4)
                     }
 
                     Color.clear
                         .frame(height: 1)
                         .id("bottom")
                 }
-                .padding(.bottom, 8)
+                .padding(.vertical, 8)
             }
-            .onChange(of: viewModel.responseText) {
+            .onChange(of: viewModel.messages.count) {
+                withAnimation(.easeOut(duration: 0.1)) {
+                    proxy.scrollTo("bottom", anchor: .bottom)
+                }
+            }
+            .onChange(of: viewModel.streamingResponse) {
                 withAnimation(.easeOut(duration: 0.1)) {
                     proxy.scrollTo("bottom", anchor: .bottom)
                 }
             }
         }
         .frame(maxHeight: 460)
+    }
+
+    @ViewBuilder
+    private func messageView(for message: ChatMessage) -> some View {
+        switch message.role {
+        case .user:
+            userMessageView(content: message.content, hasScreenshot: message.screenshot != nil)
+        case .assistant:
+            assistantMessageView(content: message.content)
+        }
+    }
+
+    private func userMessageView(content: String, hasScreenshot: Bool) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            if hasScreenshot {
+                Image(systemName: "camera.viewfinder")
+                    .font(.waveSystem(size: 12))
+                    .foregroundStyle(Color.waveAccent)
+            }
+            Text(content)
+                .font(.waveSystem(size: 14, weight: .medium))
+                .foregroundStyle(Color.waveTextPrimary)
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 6)
+        .background(Color.waveModelPill.opacity(0.5))
+    }
+
+    private func assistantMessageView(content: String) -> some View {
+        MarkdownContentView(text: content)
+            .padding(.horizontal, 16)
     }
 
 }
