@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 struct DismissPanelKey: EnvironmentKey {
     static let defaultValue: () -> Void = {}
@@ -65,6 +66,11 @@ struct ContentView: View {
             toggleModelPicker()
             return .handled
         }
+        .onKeyPress(characters: .init(charactersIn: "aA"), phases: .down) { press in
+            guard press.modifiers.contains(.command), inputFocused else { return .ignored }
+            NSApp.sendAction(#selector(NSText.selectAll(_:)), to: nil, from: nil)
+            return .handled
+        }
         .onKeyPress(.upArrow) {
             guard showModelPicker else { return .ignored }
             highlightedModelIndex = max(0, highlightedModelIndex - 1)
@@ -86,7 +92,7 @@ struct ContentView: View {
     // MARK: - Query Bar
 
     private var queryBar: some View {
-        HStack(spacing: 10) {
+        HStack(alignment: .top, spacing: 10) {
             Image(systemName: "camera.viewfinder")
                 .font(.waveSystem(size: 14, weight: .medium))
                 .foregroundStyle(Color.waveIcon)

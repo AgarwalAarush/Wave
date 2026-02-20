@@ -11,12 +11,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         guard !isRunningTests else { return }
+        applyAppearance()
         setupPanel()
         setupSettingsWindow()
         setupMenuBarItem()
         setupMainMenu()
         HotKeyManager.shared.onToggle = { [weak self] in self?.toggle() }
         HotKeyManager.shared.register()
+    }
+
+    func applyAppearance() {
+        let value = UserDefaults.standard.string(forKey: "appearance") ?? "system"
+        switch value {
+        case "light":
+            NSApp.appearance = NSAppearance(named: .aqua)
+        case "dark":
+            NSApp.appearance = NSAppearance(named: .darkAqua)
+        default:
+            NSApp.appearance = nil
+        }
     }
 
     // MARK: - Panel

@@ -157,24 +157,26 @@ struct GeneralSettingsView: View {
 
     @State private var selectedProvider: AIProvider = .openai
     @State private var selectedModel: AIModel = .default
+    @State private var appearance: String = "system"
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            openAIKeyCard
-            anthropicKeyCard
+            appearanceCard
+            apiKeysCard
             modelSelectionCard
         }
         .onAppear {
             loadAPIKeyStatus()
             loadModelSelection()
+            appearance = UserDefaults.standard.string(forKey: "appearance") ?? "system"
         }
     }
 
-    private var openAIKeyCard: some View {
+    private var appearanceCard: some View {
         SettingsCard {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(spacing: 12) {
-                    Image(systemName: "key.fill")
+                    Image(systemName: "paintbrush.fill")
                         .font(.waveSystem(size: 16, weight: .medium))
                         .foregroundStyle(Color.waveAccent)
                         .frame(width: 36, height: 36)
@@ -184,10 +186,10 @@ struct GeneralSettingsView: View {
                         )
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("OpenAI API Key")
+                        Text("Appearance")
                             .font(.waveSystem(size: 14, weight: .semibold))
                             .foregroundStyle(Color.waveTextPrimary)
-                        Text("Required to connect to OpenAI")
+                        Text("Choose light, dark, or follow system")
                             .font(.waveSystem(size: 11))
                             .foregroundStyle(Color.waveTextSecondary)
                     }
@@ -195,118 +197,21 @@ struct GeneralSettingsView: View {
 
                 Color.waveDivider.frame(height: 1)
 
-                if hasOpenAIKey && !isEditingOpenAI {
-                    // Key is stored - show masked version with replace button
-                    HStack(spacing: 12) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "key.fill")
-                                .font(.waveSystem(size: 12))
-                                .foregroundStyle(Color.waveAccent)
-
-                            Text("API key configured")
-                                .font(.waveSystem(size: 13))
-                                .foregroundStyle(Color.waveTextSecondary)
-                        }
-
-                        Spacer()
-
-                        Button(action: {
-                            isEditingOpenAI = true
-                            openAIKey = ""
-                        }) {
-                            Text("Replace Key")
-                                .font(.waveSystem(size: 12, weight: .medium))
-                                .foregroundStyle(Color.waveAccent)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 6)
-                                        .stroke(Color.waveAccent, lineWidth: 1)
-                                )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .padding(12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.waveAccent.opacity(0.1))
-                    )
-                } else {
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack(spacing: 8) {
-                            SecureField("sk-...", text: $openAIKey)
-                                .textFieldStyle(.plain)
-                                .font(.waveSystem(size: 13, design: .monospaced))
-                                .padding(10)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(Color.waveSettingsBackground)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .stroke(Color.waveBorder, lineWidth: 1)
-                                        )
-                                )
-                                .onSubmit { saveOpenAIKey() }
-                        }
-
-                        HStack(spacing: 12) {
-                            Button(action: saveOpenAIKey) {
-                                HStack(spacing: 6) {
-                                    if openAIKeySaved {
-                                        Image(systemName: "checkmark")
-                                            .font(.waveSystem(size: 11, weight: .bold))
-                                    }
-                                    Text(openAIKeySaved ? "Saved" : "Save Key")
-                                        .font(.waveSystem(size: 12, weight: .semibold))
-                                }
-                                .foregroundStyle(Color.white)
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 8)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(openAIKeySaved ? Color.green : Color.waveAccent)
-                                )
-                            }
-                            .buttonStyle(.plain)
-                            .disabled(openAIKey.isEmpty)
-                            .opacity(openAIKey.isEmpty ? 0.5 : 1)
-
-                            if isEditingOpenAI {
-                                Button(action: {
-                                    isEditingOpenAI = false
-                                    openAIKey = ""
-                                }) {
-                                    Text("Cancel")
-                                        .font(.waveSystem(size: 12, weight: .medium))
-                                        .foregroundStyle(Color.waveTextSecondary)
-                                        .padding(.horizontal, 14)
-                                        .padding(.vertical, 8)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .stroke(Color.waveBorder, lineWidth: 1)
-                                        )
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                    }
+                Picker("Appearance", selection: $appearance) {
+                    Text("Light").tag("light")
+                    Text("Dark").tag("dark")
+                    Text("System").tag("system")
                 }
-
-                HStack(alignment: .top, spacing: 8) {
-                    Image(systemName: "lock.shield")
-                        .font(.waveSystem(size: 11))
-                        .foregroundStyle(Color.waveTextSecondary)
-                        .padding(.top, 1)
-                    Text("Your API key is stored securely in the system keychain and never leaves your device.")
-                        .font(.waveSystem(size: 11))
-                        .foregroundStyle(Color.waveTextSecondary)
-                        .lineSpacing(2)
+                .pickerStyle(.segmented)
+                .onChange(of: appearance) { _, newValue in
+                    UserDefaults.standard.set(newValue, forKey: "appearance")
+                    (NSApp.delegate as? AppDelegate)?.applyAppearance()
                 }
             }
         }
     }
 
-    private var anthropicKeyCard: some View {
+    private var apiKeysCard: some View {
         SettingsCard {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(spacing: 12) {
@@ -320,10 +225,10 @@ struct GeneralSettingsView: View {
                         )
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Anthropic API Key")
+                        Text("API Keys")
                             .font(.waveSystem(size: 14, weight: .semibold))
                             .foregroundStyle(Color.waveTextPrimary)
-                        Text("Required to connect to Anthropic")
+                        Text("Configure keys for OpenAI and Anthropic")
                             .font(.waveSystem(size: 11))
                             .foregroundStyle(Color.waveTextSecondary)
                     }
@@ -331,107 +236,123 @@ struct GeneralSettingsView: View {
 
                 Color.waveDivider.frame(height: 1)
 
-                if hasAnthropicKey && !isEditingAnthropic {
-                    HStack(spacing: 12) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "key.fill")
-                                .font(.waveSystem(size: 12))
-                                .foregroundStyle(Color.waveAccent)
-                            Text("API key configured")
-                                .font(.waveSystem(size: 13))
-                                .foregroundStyle(Color.waveTextSecondary)
+                VStack(spacing: 12) {
+                    apiKeyRow(
+                        provider: "OpenAI",
+                        placeholder: "sk-...",
+                        key: $openAIKey,
+                        hasKey: hasOpenAIKey,
+                        isEditing: $isEditingOpenAI,
+                        keySaved: openAIKeySaved,
+                        onReplace: {
+                            isEditingOpenAI = true
+                            openAIKey = ""
+                        },
+                        onSave: saveOpenAIKey,
+                        onCancel: {
+                            isEditingOpenAI = false
+                            openAIKey = ""
                         }
-                        Spacer()
-                        Button(action: {
+                    )
+
+                    apiKeyRow(
+                        provider: "Anthropic",
+                        placeholder: "sk-ant-...",
+                        key: $anthropicKey,
+                        hasKey: hasAnthropicKey,
+                        isEditing: $isEditingAnthropic,
+                        keySaved: anthropicKeySaved,
+                        onReplace: {
                             isEditingAnthropic = true
                             anthropicKey = ""
-                        }) {
-                            Text("Replace Key")
-                                .font(.waveSystem(size: 12, weight: .medium))
-                                .foregroundStyle(Color.waveAccent)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 6)
-                                        .stroke(Color.waveAccent, lineWidth: 1)
-                                )
+                        },
+                        onSave: saveAnthropicKey,
+                        onCancel: {
+                            isEditingAnthropic = false
+                            anthropicKey = ""
                         }
-                        .buttonStyle(.plain)
-                    }
-                    .padding(12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.waveAccent.opacity(0.1))
                     )
-                } else {
-                    VStack(alignment: .leading, spacing: 12) {
-                        SecureField("sk-ant-...", text: $anthropicKey)
-                            .textFieldStyle(.plain)
-                            .font(.waveSystem(size: 13, design: .monospaced))
-                            .padding(10)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color.waveSettingsBackground)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .stroke(Color.waveBorder, lineWidth: 1)
-                                    )
-                            )
-                            .onSubmit { saveAnthropicKey() }
+                }
+            }
+        }
+    }
 
-                        HStack(spacing: 12) {
-                            Button(action: saveAnthropicKey) {
-                                HStack(spacing: 6) {
-                                    if anthropicKeySaved {
-                                        Image(systemName: "checkmark")
-                                            .font(.waveSystem(size: 11, weight: .bold))
-                                    }
-                                    Text(anthropicKeySaved ? "Saved" : "Save Key")
-                                        .font(.waveSystem(size: 12, weight: .semibold))
-                                }
-                                .foregroundStyle(Color.white)
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 8)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(anthropicKeySaved ? Color.green : Color.waveAccent)
+    private func apiKeyRow(
+        provider: String,
+        placeholder: String,
+        key: Binding<String>,
+        hasKey: Bool,
+        isEditing: Binding<Bool>,
+        keySaved: Bool,
+        onReplace: @escaping () -> Void,
+        onSave: @escaping () -> Void,
+        onCancel: @escaping () -> Void
+    ) -> some View {
+        Group {
+            if hasKey && !isEditing.wrappedValue {
+                HStack {
+                    Text(provider)
+                        .font(.waveSystem(size: 13, weight: .medium))
+                        .foregroundStyle(Color.waveTextPrimary)
+                    Spacer()
+                    Button(action: onReplace) {
+                        Text("Replace Key")
+                            .font(.waveSystem(size: 12, weight: .medium))
+                            .foregroundStyle(Color.waveAccent)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.vertical, 4)
+            } else {
+                HStack(spacing: 12) {
+                    Text(provider)
+                        .font(.waveSystem(size: 13, weight: .medium))
+                        .foregroundStyle(Color.waveTextPrimary)
+                        .frame(width: 80, alignment: .leading)
+
+                    SecureField(placeholder, text: key)
+                        .textFieldStyle(.plain)
+                        .font(.waveSystem(size: 13, design: .monospaced))
+                        .padding(8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(Color.waveSettingsBackground)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .stroke(Color.waveBorder, lineWidth: 1)
                                 )
-                            }
-                            .buttonStyle(.plain)
-                            .disabled(anthropicKey.isEmpty)
-                            .opacity(anthropicKey.isEmpty ? 0.5 : 1)
+                        )
+                        .onSubmit(onSave)
 
-                            if isEditingAnthropic {
-                                Button(action: {
-                                    isEditingAnthropic = false
-                                    anthropicKey = ""
-                                }) {
-                                    Text("Cancel")
-                                        .font(.waveSystem(size: 12, weight: .medium))
-                                        .foregroundStyle(Color.waveTextSecondary)
-                                        .padding(.horizontal, 14)
-                                        .padding(.vertical, 8)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .stroke(Color.waveBorder, lineWidth: 1)
-                                        )
-                                }
-                                .buttonStyle(.plain)
+                    Button(action: onSave) {
+                        HStack(spacing: 4) {
+                            if keySaved {
+                                Image(systemName: "checkmark")
+                                    .font(.waveSystem(size: 10, weight: .bold))
                             }
+                            Text(keySaved ? "Saved" : "Save Key")
+                                .font(.waveSystem(size: 12, weight: .medium))
                         }
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(keySaved ? Color.green : Color.waveAccent)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(key.wrappedValue.isEmpty)
+                    .opacity(key.wrappedValue.isEmpty ? 0.5 : 1)
+
+                    if isEditing.wrappedValue {
+                        Button("Cancel", action: onCancel)
+                            .font(.waveSystem(size: 12, weight: .medium))
+                            .foregroundStyle(Color.waveTextSecondary)
+                            .buttonStyle(.plain)
                     }
                 }
-
-                HStack(alignment: .top, spacing: 8) {
-                    Image(systemName: "lock.shield")
-                        .font(.waveSystem(size: 11))
-                        .foregroundStyle(Color.waveTextSecondary)
-                        .padding(.top, 1)
-                    Text("Your API key is stored securely in the system keychain and never leaves your device.")
-                        .font(.waveSystem(size: 11))
-                        .foregroundStyle(Color.waveTextSecondary)
-                        .lineSpacing(2)
-                }
+                .padding(.vertical, 4)
             }
         }
     }
