@@ -90,10 +90,13 @@ struct ContentView: View {
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(Color.waveIcon)
 
-            TextField("Ask anything...", text: $viewModel.queryText)
+            TextField("Ask anything...", text: $viewModel.queryText, axis: .vertical)
                 .textFieldStyle(.plain)
                 .font(.system(size: 15))
                 .foregroundStyle(Color.waveTextPrimary)
+                .lineLimit(1...4)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .multilineTextAlignment(.leading)
                 .focused($inputFocused)
                 .onSubmit {
                     guard !showModelPicker else { return }
