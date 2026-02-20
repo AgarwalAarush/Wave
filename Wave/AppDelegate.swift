@@ -1,0 +1,91 @@
+import AppKit
+import SwiftUI
+
+final class AppDelegate: NSObject, NSApplicationDelegate {
+
+    private var panel: WavePanel!
+    private let chatViewModel = ChatViewModel()
+    private var statusItem: NSStatusItem?
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        setupPanel()
+        setupMenuBarItem()
+        HotKeyManager.shared.onToggle = { [weak self] in self?.toggle() }
+        HotKeyManager.shared.register()
+    }
+
+    // MARK: - Panel
+
+    private func setupPanel() {
+        panel = WavePanel()
+
+        let rootView = ContentView(viewModel: chatViewModel)
+            .environment(\.dismissPanel, { [weak self] in self?.hidePanel() })
+
+        let hosting = NSHostingView(rootView: rootView)
+        hosting.sizingOptions = [.minSize, .maxSize, .intrinsicContentSize]
+        panel.contentView = hosting
+        panel.positionAtTopCenter()
+    }
+
+    func toggle() {
+        if panel.isVisible {
+            hidePanel()
+        } else {
+            showPanel()
+        }
+    }
+
+    private func showPanel() {
+        panel.positionAtTopCenter()
+        panel.alphaValue = 0
+        panel.makeKeyAndOrderFront(nil)
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.15
+            ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            panel.animator().alphaValue = 1
+        }
+    }
+
+    private func hidePanel() {
+        NSAnimationContext.runAnimationGroup({ ctx in
+            ctx.duration = 0.12
+            ctx.timingFunction = CAMediaTimingFunction(name: .easeIn)
+            panel.animator().alphaValue = 0
+        }, completionHandler: { [weak self] in
+            self?.panel.orderOut(nil)
+        })
+    }
+
+    func newChat() {
+        chatViewModel.newChat()
+    }
+
+    // MARK: - Menu Bar
+
+    private func setupMenuBarItem() {
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        if let button = statusItem?.button {
+            button.image = NSImage(systemSymbolName: "wave.3.right", accessibilityDescription: "Wave")
+        }
+
+        let menu = NSMenu()
+        menu.addItem(NSMenuItem(title: "Toggle Wave", action: #selector(menuToggle), keyEquivalent: "`"))
+        menu.items.last?.keyEquivalentModifierMask = .command
+        menu.addItem(NSMenuItem(title: "New Chat", action: #selector(menuNewChat), keyEquivalent: "n"))
+        menu.items.last?.keyEquivalentModifierMask = .command
+        menu.addItem(NSMenuItem.separator())
+        menu.addItem(NSMenuItem(title: "Settings...", action: #selector(menuOpenSettings), keyEquivalent: ","))
+        menu.addItem(NSMenuItem.separator())
+        menu.addItem(NSMenuItem(title: "Quit Wave", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        statusItem?.menu = menu
+    }
+
+    @objc private func menuToggle() { toggle() }
+    @objc private func menuNewChat() { newChat() }
+
+    @objc private func menuOpenSettings() {
+        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+}
