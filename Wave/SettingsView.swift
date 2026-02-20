@@ -45,7 +45,7 @@ struct SettingsView: View {
             }
 
             Section("Keyboard Shortcuts") {
-                LabeledContent("Toggle Wave") { Text("**\u{2318}`**").foregroundStyle(.secondary) }
+                LabeledContent("Toggle Wave") { Text("**\u{21E7}\u{232B}**").foregroundStyle(.secondary) }
                 LabeledContent("New Chat") { Text("**\u{2318}N**").foregroundStyle(.secondary) }
                 LabeledContent("Model Selector") { Text("**\u{2318}\u{21E7}M**").foregroundStyle(.secondary) }
                 LabeledContent("Hide") { Text("**Esc**").foregroundStyle(.secondary) }

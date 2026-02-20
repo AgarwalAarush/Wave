@@ -70,8 +70,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "Toggle Wave", action: #selector(menuToggle), keyEquivalent: "`"))
-        menu.items.last?.keyEquivalentModifierMask = .command
+        menu.addItem(NSMenuItem(title: "Toggle Wave", action: #selector(menuToggle), keyEquivalent: "\u{08}"))
+        menu.items.last?.keyEquivalentModifierMask = .shift
         menu.addItem(NSMenuItem(title: "New Chat", action: #selector(menuNewChat), keyEquivalent: "n"))
         menu.items.last?.keyEquivalentModifierMask = .command
         menu.addItem(NSMenuItem.separator())
@@ -85,7 +85,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func menuNewChat() { newChat() }
 
     @objc private func menuOpenSettings() {
-        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
         NSApp.activate(ignoringOtherApps: true)
+        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+        DispatchQueue.main.async {
+            for window in NSApp.windows where window.title == "Settings" || window.identifier?.rawValue.contains("Settings") == true {
+                window.makeKeyAndOrderFront(nil)
+                window.orderFrontRegardless()
+                return
+            }
+        }
     }
 }

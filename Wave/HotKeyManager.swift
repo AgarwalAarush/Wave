@@ -12,8 +12,8 @@ final class HotKeyManager: @unchecked Sendable {
     private init() {}
 
     func register() {
-        let keyCode: UInt32 = 50 // backtick
-        let modifiers: UInt32 = UInt32(cmdKey)
+        let keyCode: UInt32 = 51 // delete (backspace)
+        let modifiers: UInt32 = UInt32(shiftKey)
 
         var hotKeyID = EventHotKeyID(
             signature: UTGetOSTypeFromString("WAVE" as CFString),
@@ -46,7 +46,7 @@ final class HotKeyManager: @unchecked Sendable {
             GetApplicationEventTarget(), 0, &hotKeyRef
         )
         if status != noErr {
-            print("[Wave] Failed to register Cmd+` hotkey: \(status)")
+            print("[Wave] Failed to register Shift+Delete hotkey: \(status)")
         }
     }
 
