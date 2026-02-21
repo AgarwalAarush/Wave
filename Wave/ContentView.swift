@@ -199,13 +199,13 @@ struct ContentView: View {
             }
             return .handled
         }
-        .onKeyPress(characters: .init(charactersIn: "1"), phases: .down) { press in
+        .onKeyPress(characters: .init(charactersIn: "1!"), phases: .down) { press in
             guard press.modifiers.contains(.command),
                   press.modifiers.contains(.shift) else { return .ignored }
             captureCurrentFocusedWindow()
             return .handled
         }
-        .onKeyPress(characters: .init(charactersIn: "2"), phases: .down) { press in
+        .onKeyPress(characters: .init(charactersIn: "2@"), phases: .down) { press in
             guard press.modifiers.contains(.command),
                   press.modifiers.contains(.shift) else { return .ignored }
             capturePreviousFocusedWindow()
