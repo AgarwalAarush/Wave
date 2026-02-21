@@ -52,6 +52,7 @@ final class ChatViewModel: ObservableObject {
     }
 
     @Published var pendingScreenshot: Data?
+    @Published var pendingScreenshotSourceName: String?
     @Published var hasManualScreenshot: Bool = false
 
     private var streamTask: Task<Void, Never>?
@@ -87,20 +88,25 @@ final class ChatViewModel: ObservableObject {
         let model = selectedModel.rawValue
         let screenshotEnabled = dependencies.readSettingObject("screenshot_enabled") as? Bool ?? true
         let manualScreenshot = pendingScreenshot
+        let manualScreenshotSourceName = pendingScreenshotSourceName
 
         pendingScreenshot = nil
+        pendingScreenshotSourceName = nil
         hasManualScreenshot = false
 
         streamTask = Task {
             var screenshotData: Data?
+            var screenshotSourceName: String?
             if let manual = manualScreenshot {
                 screenshotData = manual
+                screenshotSourceName = manualScreenshotSourceName
             } else if screenshotEnabled {
                 screenshotData = await dependencies.captureScreen()
+                screenshotSourceName = "Screen"
             }
 
             // Add user message to history
-            let userMessage = ChatMessage(role: .user, content: query, screenshot: screenshotData)
+            let userMessage = ChatMessage(role: .user, content: query, screenshot: screenshotData, screenshotSourceName: screenshotSourceName)
             await MainActor.run {
                 self.messages.append(userMessage)
             }
@@ -161,16 +167,19 @@ final class ChatViewModel: ObservableObject {
         streamingResponse = ""
         errorMessage = nil
         pendingScreenshot = nil
+        pendingScreenshotSourceName = nil
         hasManualScreenshot = false
     }
 
-    func attachScreenshot(_ data: Data) {
+    func attachScreenshot(_ data: Data, sourceName: String? = nil) {
         pendingScreenshot = data
+        pendingScreenshotSourceName = sourceName
         hasManualScreenshot = true
     }
 
     func removeScreenshot() {
         pendingScreenshot = nil
+        pendingScreenshotSourceName = nil
         hasManualScreenshot = false
     }
 }

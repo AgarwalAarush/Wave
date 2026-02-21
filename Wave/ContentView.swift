@@ -596,10 +596,17 @@ struct ContentView: View {
     }
 
     private var screenshotIndicator: some View {
-        HStack(spacing: 4) {
+        let lightBlue = Color(red: 0.4, green: 0.7, blue: 1.0)
+        let sourceName = viewModel.pendingScreenshotSourceName ?? "Screenshot"
+        let truncatedName = sourceName.count > 10 ? String(sourceName.prefix(10)) + "…" : sourceName
+
+        return HStack(spacing: 6) {
             Image(systemName: "photo.fill")
                 .font(.waveSystem(size: 12))
-                .foregroundStyle(Color.waveAccent)
+                .foregroundStyle(lightBlue)
+            Text(truncatedName)
+                .font(.waveSystem(size: 11, weight: .medium))
+                .foregroundStyle(lightBlue)
             Button {
                 viewModel.removeScreenshot()
             } label: {
@@ -609,9 +616,9 @@ struct ContentView: View {
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 2)
-        .background(Color.waveAccent.opacity(0.15), in: Capsule())
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(lightBlue.opacity(0.15), in: Capsule())
     }
 
     private func toggleScreenshotPalette() {
@@ -656,6 +663,7 @@ struct ContentView: View {
     }
 
     private func selectScreenshotTarget(_ target: CaptureTarget) {
+        let sourceName = target.appName ?? target.displayName
         withAnimation(PaletteStyle.animation) {
             showScreenshotPalette = false
             viewModel.queryText = savedQueryText
@@ -665,7 +673,7 @@ struct ContentView: View {
         Task {
             if let data = await ScreenCaptureService.shared.capture(target: target) {
                 await MainActor.run {
-                    viewModel.attachScreenshot(data)
+                    viewModel.attachScreenshot(data, sourceName: sourceName)
                 }
             }
         }
@@ -675,29 +683,29 @@ struct ContentView: View {
         Task {
             if let data = await ScreenCaptureService.shared.captureFullScreen() {
                 await MainActor.run {
-                    viewModel.attachScreenshot(data)
+                    viewModel.attachScreenshot(data, sourceName: "Screen")
                 }
             }
         }
     }
 
     private func captureCurrentFocusedWindow() {
-        guard let bundleId = WindowFocusTracker.shared.currentFocused?.bundleIdentifier else { return }
+        guard let focused = WindowFocusTracker.shared.currentFocused else { return }
         Task {
-            if let data = await ScreenCaptureService.shared.captureWindow(forBundleIdentifier: bundleId) {
+            if let data = await ScreenCaptureService.shared.captureWindow(forBundleIdentifier: focused.bundleIdentifier) {
                 await MainActor.run {
-                    viewModel.attachScreenshot(data)
+                    viewModel.attachScreenshot(data, sourceName: focused.appName)
                 }
             }
         }
     }
 
     private func capturePreviousFocusedWindow() {
-        guard let bundleId = WindowFocusTracker.shared.previousFocused?.bundleIdentifier else { return }
+        guard let focused = WindowFocusTracker.shared.previousFocused else { return }
         Task {
-            if let data = await ScreenCaptureService.shared.captureWindow(forBundleIdentifier: bundleId) {
+            if let data = await ScreenCaptureService.shared.captureWindow(forBundleIdentifier: focused.bundleIdentifier) {
                 await MainActor.run {
-                    viewModel.attachScreenshot(data)
+                    viewModel.attachScreenshot(data, sourceName: focused.appName)
                 }
             }
         }
@@ -762,20 +770,19 @@ struct ContentView: View {
     private func messageView(for message: ChatMessage) -> some View {
         switch message.role {
         case .user:
-            userMessageView(content: message.content, hasScreenshot: message.screenshot != nil)
+            userMessageView(content: message.content, screenshot: message.screenshot)
         case .assistant:
             assistantMessageView(content: message.content)
         }
     }
 
-    private func userMessageView(content: String, hasScreenshot: Bool) -> some View {
+    private func userMessageView(content: String, screenshot: Data?) -> some View {
         HStack {
             Spacer(minLength: 60)
-            HStack(alignment: .top, spacing: 6) {
-                if hasScreenshot {
-                    Image(systemName: "camera.viewfinder")
-                        .font(.waveSystem(size: 11))
-                        .foregroundStyle(Color.waveAccent)
+            VStack(alignment: .trailing, spacing: 6) {
+                if let screenshotData = screenshot,
+                   let nsImage = NSImage(data: screenshotData) {
+                    screenshotThumbnail(image: nsImage)
                 }
                 Text(content)
                     .font(.waveSystem(size: 14))
@@ -783,9 +790,21 @@ struct ContentView: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(Color.waveAccent.opacity(0.15), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(Color(red: 0.19, green: 0.19, blue: 0.19), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
         .padding(.horizontal, 16)
+    }
+
+    private func screenshotThumbnail(image: NSImage) -> some View {
+        Image(nsImage: image)
+            .resizable()
+            .aspectRatio(contentMode: .fill)
+            .frame(width: 120, height: 68)
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(Color.white.opacity(0.1), lineWidth: 0.5)
+            )
     }
 
     private func assistantMessageView(content: String) -> some View {
