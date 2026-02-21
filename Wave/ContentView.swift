@@ -736,20 +736,23 @@ struct ContentView: View {
     }
 
     private func userMessageView(content: String, hasScreenshot: Bool) -> some View {
-        HStack(alignment: .top, spacing: 8) {
-            if hasScreenshot {
-                Image(systemName: "camera.viewfinder")
-                    .font(.waveSystem(size: 12))
-                    .foregroundStyle(Color.waveAccent)
+        HStack {
+            Spacer(minLength: 60)
+            HStack(alignment: .top, spacing: 6) {
+                if hasScreenshot {
+                    Image(systemName: "camera.viewfinder")
+                        .font(.waveSystem(size: 11))
+                        .foregroundStyle(Color.waveAccent)
+                }
+                Text(content)
+                    .font(.waveSystem(size: 14))
+                    .foregroundStyle(Color.waveTextPrimary)
             }
-            Text(content)
-                .font(.waveSystem(size: 14, weight: .medium))
-                .foregroundStyle(Color.waveTextPrimary)
-            Spacer()
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Color.waveAccent.opacity(0.15), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 6)
-        .background(Color.waveModelPill.opacity(0.5))
     }
 
     private func assistantMessageView(content: String) -> some View {

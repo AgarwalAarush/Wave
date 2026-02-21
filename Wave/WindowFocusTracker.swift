@@ -33,13 +33,47 @@ final class WindowFocusTracker: @unchecked Sendable {
             self?.handleAppActivation(notification)
         }
 
-        // Initialize with current frontmost app
-        if let frontApp = workspace.frontmostApplication {
+        // Track app deactivation to capture previous app when Wave activates
+        workspace.notificationCenter.addObserver(
+            forName: NSWorkspace.didDeactivateApplicationNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            self?.handleAppDeactivation(notification)
+        }
+
+        // Initialize with current frontmost app (skip Wave itself)
+        if let frontApp = workspace.frontmostApplication,
+           frontApp.bundleIdentifier != Bundle.main.bundleIdentifier {
             currentFocused = FocusedWindow(
                 bundleIdentifier: frontApp.bundleIdentifier ?? "",
                 appName: frontApp.localizedName ?? "Unknown",
                 windowTitle: nil
             )
+        }
+    }
+
+    private func handleAppDeactivation(_ notification: Notification) {
+        guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else {
+            return
+        }
+
+        // When a non-Wave app is deactivated, save it as current
+        // This captures the app the user was in before Wave activated
+        guard app.bundleIdentifier != Bundle.main.bundleIdentifier else {
+            return
+        }
+
+        let deactivated = FocusedWindow(
+            bundleIdentifier: app.bundleIdentifier ?? "",
+            appName: app.localizedName ?? "Unknown",
+            windowTitle: nil
+        )
+
+        // Update tracking: deactivated app becomes current (if different)
+        if currentFocused != deactivated {
+            previousFocused = currentFocused
+            currentFocused = deactivated
         }
     }
 
