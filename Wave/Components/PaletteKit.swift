@@ -3,8 +3,11 @@ import SwiftUI
 // MARK: - Palette Style Constants
 
 enum PaletteStyle {
-    static let animation = Animation.spring(response: 0.25, dampingFraction: 0.9)
-    static let transition = AnyTransition.opacity.combined(with: .move(edge: .top))
+    static let animation = Animation.easeOut(duration: 0.2)
+    static let transition = AnyTransition.asymmetric(
+        insertion: .opacity.combined(with: .move(edge: .top)),
+        removal: .opacity
+    )
 
     static let rowCornerRadius: CGFloat = 6
     static let rowPaddingHorizontal: CGFloat = 12

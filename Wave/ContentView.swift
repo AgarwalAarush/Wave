@@ -111,7 +111,10 @@ struct ContentView: View {
             if viewModel.hasContent || viewModel.errorMessage != nil {
                 Color.waveDivider.frame(height: 1)
                 conversationArea
-                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .top).combined(with: .opacity),
+                        removal: .opacity
+                    ))
             }
         }
         .frame(width: 560)
@@ -123,8 +126,8 @@ struct ContentView: View {
                 .strokeBorder(Color.waveBorder, lineWidth: 0.5)
         )
         .shadow(color: Color.waveShadow, radius: 20, y: 8)
-        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: viewModel.hasContent)
-        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: viewModel.errorMessage != nil)
+        .animation(.easeOut(duration: 0.2), value: viewModel.hasContent)
+        .animation(.easeOut(duration: 0.2), value: viewModel.errorMessage != nil)
         .onAppear { inputFocused = true }
         .onChange(of: viewModel.queryText) {
             if showSettingsPalette {
