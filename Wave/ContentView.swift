@@ -102,7 +102,7 @@ struct ContentView: View {
             }
             if showScreenshotPalette {
                 ScreenshotPalette(
-                    targets: screenshotTargets,
+                    targets: filteredScreenshotTargets,
                     highlightedIndex: highlightedScreenshotIndex,
                     onSelect: { target in selectScreenshotTarget(target) }
                 )
@@ -130,11 +130,16 @@ struct ContentView: View {
             if showSettingsPalette {
                 highlightedSettingIndex = 0
             }
+            if showScreenshotPalette {
+                highlightedScreenshotIndex = 0
+            }
         }
         .onKeyPress(.escape) {
             if showScreenshotPalette {
                 withAnimation(PaletteStyle.animation) {
                     showScreenshotPalette = false
+                    viewModel.queryText = savedQueryText
+                    savedQueryText = ""
                 }
                 return .handled
             }
@@ -221,7 +226,7 @@ struct ContentView: View {
         }
         .onKeyPress(.downArrow) {
             if showScreenshotPalette {
-                let maxIndex = screenshotTargets.count - 1
+                let maxIndex = filteredScreenshotTargets.count - 1
                 highlightedScreenshotIndex = min(max(0, maxIndex), highlightedScreenshotIndex + 1)
                 return .handled
             }
@@ -257,6 +262,9 @@ struct ContentView: View {
         if showSettingsPalette {
             return "Search settings..."
         }
+        if showScreenshotPalette {
+            return "Search windows..."
+        }
         return "Ask anything..."
     }
 
@@ -279,7 +287,7 @@ struct ContentView: View {
                 .multilineTextAlignment(.leading)
                 .focused($inputFocused)
                 .onSubmit {
-                    guard !showModelPicker, !showSettingsPalette else { return }
+                    guard !showModelPicker, !showSettingsPalette, !showScreenshotPalette else { return }
                     viewModel.submit()
                 }
 
@@ -570,6 +578,23 @@ struct ContentView: View {
 
     // MARK: - Screenshot Palette
 
+    private var filteredScreenshotTargets: [CaptureTarget] {
+        let filter = viewModel.queryText.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !filter.isEmpty else { return screenshotTargets }
+
+        return screenshotTargets.filter { target in
+            // Match against display name (window title)
+            if target.displayName.lowercased().contains(filter) {
+                return true
+            }
+            // Match against app name
+            if let appName = target.appName, appName.lowercased().contains(filter) {
+                return true
+            }
+            return false
+        }
+    }
+
     private var screenshotIndicator: some View {
         HStack(spacing: 4) {
             Image(systemName: "photo.fill")
@@ -593,15 +618,19 @@ struct ContentView: View {
         if showScreenshotPalette {
             withAnimation(PaletteStyle.animation) {
                 showScreenshotPalette = false
+                viewModel.queryText = savedQueryText
+                savedQueryText = ""
             }
         } else {
             showModelPicker = false
             // Restore query text if settings palette was open
             if showSettingsPalette {
-                viewModel.queryText = savedQueryText
-                savedQueryText = ""
+                showSettingsPalette = false
+            } else {
+                // Save current query text
+                savedQueryText = viewModel.queryText
             }
-            showSettingsPalette = false
+            viewModel.queryText = ""
 
             screenshotTargets = []
             highlightedScreenshotIndex = 0
@@ -620,14 +649,17 @@ struct ContentView: View {
     }
 
     private func selectHighlightedScreenshotTarget() {
+        let filtered = filteredScreenshotTargets
         guard highlightedScreenshotIndex >= 0,
-              highlightedScreenshotIndex < screenshotTargets.count else { return }
-        selectScreenshotTarget(screenshotTargets[highlightedScreenshotIndex])
+              highlightedScreenshotIndex < filtered.count else { return }
+        selectScreenshotTarget(filtered[highlightedScreenshotIndex])
     }
 
     private func selectScreenshotTarget(_ target: CaptureTarget) {
         withAnimation(PaletteStyle.animation) {
             showScreenshotPalette = false
+            viewModel.queryText = savedQueryText
+            savedQueryText = ""
         }
 
         Task {
@@ -711,6 +743,7 @@ struct ContentView: View {
                 }
                 .padding(.vertical, 8)
             }
+            .scrollIndicators(.hidden)
             .onChange(of: viewModel.messages.count) {
                 withAnimation(.easeOut(duration: 0.1)) {
                     proxy.scrollTo("bottom", anchor: .bottom)
