@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     private var panel: WavePanel!
     private var settingsWindow: SettingsWindow?
@@ -105,12 +105,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         hosting.layer?.backgroundColor = NSColor.clear.cgColor
         settingsWindow?.contentView = hosting
 
+        settingsWindow?.delegate = self
+
         if let window = settingsWindow, let screen = NSScreen.main {
             let screenFrame = screen.visibleFrame
             let x = screenFrame.midX - window.frame.width / 2
             let y = screenFrame.midY - window.frame.height / 2
             window.setFrameOrigin(NSPoint(x: x, y: y))
         }
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow, window === settingsWindow else { return }
+        NSApp.setActivationPolicy(.accessory)
     }
 
     // MARK: - Main Menu (for Cmd+,)
@@ -156,6 +163,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func menuNewChat() { newChat() }
 
     @objc private func menuOpenSettings() {
+        NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
         settingsWindow?.makeKeyAndOrderFront(nil)
     }

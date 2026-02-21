@@ -1,9 +1,18 @@
 import SwiftUI
+import ScreenCaptureKit
 
 struct ScreenshotPalette: View {
     let targets: [CaptureTarget]
     let highlightedIndex: Int
     let onSelect: (CaptureTarget) -> Void
+
+    private var currentFocusedBundle: String? {
+        WindowFocusTracker.shared.currentFocused?.bundleIdentifier
+    }
+
+    private var previousFocusedBundle: String? {
+        WindowFocusTracker.shared.previousFocused?.bundleIdentifier
+    }
 
     var body: some View {
         PaletteContainer {
@@ -26,6 +35,39 @@ struct ScreenshotPalette: View {
                 .foregroundStyle(Color.waveTextSecondary)
         }
         .padding(.vertical, 8)
+    }
+
+    private func shortcutLabel(for target: CaptureTarget, at index: Int) -> String? {
+        // Skip full screen targets
+        guard case .window = target.kind else { return nil }
+
+        // Find first window matching current focused app
+        if let currentBundle = currentFocusedBundle {
+            let firstCurrentIndex = targets.firstIndex { t in
+                if case .window(let w) = t.kind {
+                    return w.owningApplication?.bundleIdentifier == currentBundle
+                }
+                return false
+            }
+            if firstCurrentIndex == index {
+                return "⌘⇧1"
+            }
+        }
+
+        // Find first window matching previous focused app
+        if let previousBundle = previousFocusedBundle {
+            let firstPreviousIndex = targets.firstIndex { t in
+                if case .window(let w) = t.kind {
+                    return w.owningApplication?.bundleIdentifier == previousBundle
+                }
+                return false
+            }
+            if firstPreviousIndex == index {
+                return "⌘⇧2"
+            }
+        }
+
+        return nil
     }
 
     @ViewBuilder
@@ -53,10 +95,17 @@ struct ScreenshotPalette: View {
                     .lineLimit(1)
             }
         } trailing: {
-            if let appName = target.appName {
-                Text(appName)
-                    .font(.waveSystem(size: 11))
-                    .foregroundStyle(Color.waveTextSecondary)
+            HStack(spacing: 8) {
+                if let shortcut = shortcutLabel(for: target, at: index) {
+                    Text(shortcut)
+                        .font(.waveSystem(size: 10, weight: .medium))
+                        .foregroundStyle(Color.waveAccent)
+                }
+                if let appName = target.appName {
+                    Text(appName)
+                        .font(.waveSystem(size: 11))
+                        .foregroundStyle(Color.waveTextSecondary)
+                }
             }
         }
     }

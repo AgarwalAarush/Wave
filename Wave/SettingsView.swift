@@ -35,7 +35,7 @@ struct SettingsView: View {
         }
         .frame(minWidth: 620, minHeight: 460)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.ultraThinMaterial)
+        .background(.thinMaterial)
         .preferredColorScheme(.dark)
     }
 }

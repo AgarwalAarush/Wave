@@ -79,8 +79,10 @@ struct ContentView: View {
     // Settings palette state
     @State private var showSettingsPalette = false
     @State private var settingsPaletteLevel: SettingsPaletteLevel = .settingsList
-    @State private var settingsFilterText = ""
     @State private var highlightedSettingIndex = 0
+
+    // Saved query text when palette is open (to restore on close)
+    @State private var savedQueryText = ""
 
     // Screenshot palette state
     @State private var showScreenshotPalette = false
@@ -124,6 +126,11 @@ struct ContentView: View {
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: viewModel.hasContent)
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: viewModel.errorMessage != nil)
         .onAppear { inputFocused = true }
+        .onChange(of: viewModel.queryText) {
+            if showSettingsPalette {
+                highlightedSettingIndex = 0
+            }
+        }
         .onKeyPress(.escape) {
             if showScreenshotPalette {
                 withAnimation(PaletteStyle.animation) {
@@ -138,7 +145,8 @@ struct ContentView: View {
                         highlightedSettingIndex = 0
                     } else {
                         showSettingsPalette = false
-                        settingsFilterText = ""
+                        viewModel.queryText = savedQueryText
+                        savedQueryText = ""
                     }
                 }
                 return .handled
@@ -184,6 +192,18 @@ struct ContentView: View {
             } else {
                 captureAndAttachFullScreen()
             }
+            return .handled
+        }
+        .onKeyPress(characters: .init(charactersIn: "1"), phases: .down) { press in
+            guard press.modifiers.contains(.command),
+                  press.modifiers.contains(.shift) else { return .ignored }
+            captureCurrentFocusedWindow()
+            return .handled
+        }
+        .onKeyPress(characters: .init(charactersIn: "2"), phases: .down) { press in
+            guard press.modifiers.contains(.command),
+                  press.modifiers.contains(.shift) else { return .ignored }
+            capturePreviousFocusedWindow()
             return .handled
         }
         .onKeyPress(.upArrow) {
@@ -233,6 +253,13 @@ struct ContentView: View {
 
     // MARK: - Query Bar
 
+    private var queryBarPlaceholder: String {
+        if showSettingsPalette {
+            return "Search settings..."
+        }
+        return "Ask anything..."
+    }
+
     private var queryBar: some View {
         HStack(alignment: .top, spacing: 10) {
             if viewModel.hasManualScreenshot {
@@ -243,7 +270,7 @@ struct ContentView: View {
                     .foregroundStyle(Color.waveIcon)
             }
 
-            TextField("Ask anything...", text: $viewModel.queryText, axis: .vertical)
+            TextField(queryBarPlaceholder, text: $viewModel.queryText, axis: .vertical)
                 .textFieldStyle(.plain)
                 .font(.waveSystem(size: 15))
                 .foregroundStyle(Color.waveTextPrimary)
@@ -252,7 +279,7 @@ struct ContentView: View {
                 .multilineTextAlignment(.leading)
                 .focused($inputFocused)
                 .onSubmit {
-                    guard !showModelPicker else { return }
+                    guard !showModelPicker, !showSettingsPalette else { return }
                     viewModel.submit()
                 }
 
@@ -357,6 +384,12 @@ struct ContentView: View {
             if showModelPicker {
                 showModelPicker = false
             } else {
+                // Restore query text if settings palette was open
+                if showSettingsPalette {
+                    viewModel.queryText = savedQueryText
+                    savedQueryText = ""
+                    showSettingsPalette = false
+                }
                 let models = dropdownModels
                 highlightedModelIndex = models.firstIndex(of: viewModel.selectedModel) ?? 0
                 showModelPicker = true
@@ -376,7 +409,7 @@ struct ContentView: View {
     // MARK: - Settings Palette
 
     private var filteredSettings: [SettingItem] {
-        SettingItem.allCases.filter { $0.matches(filter: settingsFilterText) }
+        SettingItem.allCases.filter { $0.matches(filter: viewModel.queryText) }
     }
 
     private var currentSettingsItemCount: Int {
@@ -390,24 +423,6 @@ struct ContentView: View {
 
     private var settingsPaletteDropdown: some View {
         VStack(spacing: 0) {
-            Color.waveDivider.frame(height: 1)
-
-            // Search field
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
-                    .font(.waveSystem(size: 12))
-                    .foregroundStyle(Color.waveTextSecondary)
-                TextField("Search settings...", text: $settingsFilterText)
-                    .textFieldStyle(.plain)
-                    .font(.waveSystem(size: 13))
-                    .foregroundStyle(Color.waveTextPrimary)
-                    .onChange(of: settingsFilterText) {
-                        highlightedSettingIndex = 0
-                    }
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-
             Color.waveDivider.frame(height: 1)
 
             VStack(alignment: .leading, spacing: 2) {
@@ -499,11 +514,16 @@ struct ContentView: View {
         withAnimation(PaletteStyle.animation) {
             if showSettingsPalette {
                 showSettingsPalette = false
-                settingsFilterText = ""
                 settingsPaletteLevel = .settingsList
+                // Restore original query text
+                viewModel.queryText = savedQueryText
+                savedQueryText = ""
             } else {
                 // Close model picker if open
                 showModelPicker = false
+                // Save current query text and clear for filtering
+                savedQueryText = viewModel.queryText
+                viewModel.queryText = ""
                 showSettingsPalette = true
                 settingsPaletteLevel = .settingsList
                 highlightedSettingIndex = 0
@@ -543,7 +563,8 @@ struct ContentView: View {
         withAnimation(PaletteStyle.animation) {
             showSettingsPalette = false
             settingsPaletteLevel = .settingsList
-            settingsFilterText = ""
+            viewModel.queryText = savedQueryText
+            savedQueryText = ""
         }
     }
 
@@ -575,8 +596,12 @@ struct ContentView: View {
             }
         } else {
             showModelPicker = false
+            // Restore query text if settings palette was open
+            if showSettingsPalette {
+                viewModel.queryText = savedQueryText
+                savedQueryText = ""
+            }
             showSettingsPalette = false
-            settingsFilterText = ""
 
             screenshotTargets = []
             highlightedScreenshotIndex = 0
@@ -617,6 +642,28 @@ struct ContentView: View {
     private func captureAndAttachFullScreen() {
         Task {
             if let data = await ScreenCaptureService.shared.captureFullScreen() {
+                await MainActor.run {
+                    viewModel.attachScreenshot(data)
+                }
+            }
+        }
+    }
+
+    private func captureCurrentFocusedWindow() {
+        guard let bundleId = WindowFocusTracker.shared.currentFocused?.bundleIdentifier else { return }
+        Task {
+            if let data = await ScreenCaptureService.shared.captureWindow(forBundleIdentifier: bundleId) {
+                await MainActor.run {
+                    viewModel.attachScreenshot(data)
+                }
+            }
+        }
+    }
+
+    private func capturePreviousFocusedWindow() {
+        guard let bundleId = WindowFocusTracker.shared.previousFocused?.bundleIdentifier else { return }
+        Task {
+            if let data = await ScreenCaptureService.shared.captureWindow(forBundleIdentifier: bundleId) {
                 await MainActor.run {
                     viewModel.attachScreenshot(data)
                 }
