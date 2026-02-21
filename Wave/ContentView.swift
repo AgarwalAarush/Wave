@@ -270,13 +270,16 @@ struct ContentView: View {
 
     private var queryBar: some View {
         HStack(alignment: .top, spacing: 10) {
-            if viewModel.hasManualScreenshot {
-                screenshotIndicator
-            } else {
-                Image(systemName: "camera.viewfinder")
-                    .font(.waveSystem(size: 14, weight: .medium))
-                    .foregroundStyle(Color.waveIcon)
+            Group {
+                if viewModel.hasManualScreenshot {
+                    screenshotIndicator
+                } else {
+                    Image(systemName: "camera.viewfinder")
+                        .font(.waveSystem(size: 14, weight: .medium))
+                        .foregroundStyle(Color.waveIcon)
+                }
             }
+            .frame(height: 18, alignment: .center)
 
             TextField(queryBarPlaceholder, text: $viewModel.queryText, axis: .vertical)
                 .textFieldStyle(.plain)
@@ -617,7 +620,7 @@ struct ContentView: View {
             .buttonStyle(.plain)
         }
         .padding(.horizontal, 8)
-        .padding(.vertical, 5)
+        .padding(.vertical, 3)
         .background(lightBlue.opacity(0.15), in: Capsule())
     }
 
