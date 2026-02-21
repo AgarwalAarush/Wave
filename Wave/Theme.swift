@@ -79,6 +79,11 @@ extension Color {
         dark: Color(hex: 0x5DD6C8)
     )
 
+    static let waveUserBubble = Color(
+        light: Color(hex: 0xF4F4F4),
+        dark: Color(hex: 0x303030)
+    )
+
     static let waveSettingsBackground = Color(
         light: Color(hex: 0xF5F5F5),
         dark: Color(hex: 0x1E1E1E)

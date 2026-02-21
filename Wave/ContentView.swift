@@ -790,7 +790,7 @@ struct ContentView: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(Color(red: 0.19, green: 0.19, blue: 0.19), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(Color.waveUserBubble, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
         .padding(.horizontal, 16)
     }

@@ -6,7 +6,7 @@ struct CodeBlockView: View {
     let code: String
 
     @State private var showCopied = false
-    private let cornerRadius: CGFloat = 12
+    private let cornerRadius: CGFloat = 16
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -34,21 +34,17 @@ struct CodeBlockView: View {
                 .buttonStyle(.plain)
                 .animation(.easeInOut(duration: 0.15), value: showCopied)
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
             .background(Color.waveCodeBackground)
-
-            Rectangle()
-                .fill(Color.waveBorder)
-                .frame(height: 0.5)
 
             // Code content
             ScrollView(.horizontal, showsIndicators: false) {
                 Text(SyntaxHighlighter.highlight(code: code, language: language))
                     .font(.waveSystem(size: 12, design: .monospaced))
                     .textSelection(.enabled)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .background(Color.waveCodeBackground)
