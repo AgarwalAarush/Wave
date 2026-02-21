@@ -655,7 +655,9 @@ struct ContentView: View {
             Task {
                 let targets = await ScreenCaptureService.shared.getAvailableTargets()
                 await MainActor.run {
-                    screenshotTargets = targets
+                    withAnimation(PaletteStyle.animation) {
+                        screenshotTargets = targets
+                    }
                 }
             }
         }
