@@ -88,6 +88,8 @@ struct ContentView: View {
     @State private var showScreenshotPalette = false
     @State private var highlightedScreenshotIndex = 0
     @State private var screenshotTargets: [CaptureTarget] = []
+    @State private var cachedScreenshotTargets: [CaptureTarget] = []
+    @State private var screenshotRefreshTask: Task<Void, Never>?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -128,7 +130,13 @@ struct ContentView: View {
         .shadow(color: Color.waveShadow, radius: 20, y: 8)
         .animation(.easeOut(duration: 0.2), value: viewModel.hasContent)
         .animation(.easeOut(duration: 0.2), value: viewModel.errorMessage != nil)
-        .onAppear { inputFocused = true }
+        .onAppear {
+            inputFocused = true
+            startScreenshotTargetRefresh()
+        }
+        .onDisappear {
+            screenshotRefreshTask?.cancel()
+        }
         .onChange(of: viewModel.queryText) {
             if showSettingsPalette {
                 highlightedSettingIndex = 0
@@ -645,18 +653,24 @@ struct ContentView: View {
             }
             viewModel.queryText = ""
 
-            screenshotTargets = []
+            // Use cached targets immediately for instant display
             highlightedScreenshotIndex = 0
+            screenshotTargets = cachedScreenshotTargets
 
             withAnimation(PaletteStyle.animation) {
                 showScreenshotPalette = true
             }
 
+            // Refresh in background and update if different
             Task {
-                let targets = await ScreenCaptureService.shared.getAvailableTargets()
+                let freshTargets = await ScreenCaptureService.shared.getAvailableTargets()
                 await MainActor.run {
-                    withAnimation(PaletteStyle.animation) {
-                        screenshotTargets = targets
+                    cachedScreenshotTargets = freshTargets
+                    // Only animate update if targets changed
+                    if freshTargets.map(\.id) != screenshotTargets.map(\.id) {
+                        withAnimation(PaletteStyle.animation) {
+                            screenshotTargets = freshTargets
+                        }
                     }
                 }
             }
@@ -714,6 +728,34 @@ struct ContentView: View {
             if let data = await ScreenCaptureService.shared.captureWindow(forBundleIdentifier: focused.bundleIdentifier) {
                 await MainActor.run {
                     viewModel.attachScreenshot(data, sourceName: focused.appName)
+                }
+            }
+        }
+    }
+
+    private func startScreenshotTargetRefresh() {
+        screenshotRefreshTask?.cancel()
+        screenshotRefreshTask = Task {
+            // Initial fetch
+            let initial = await ScreenCaptureService.shared.getAvailableTargets()
+            await MainActor.run {
+                cachedScreenshotTargets = initial
+            }
+
+            // Refresh every 30 seconds
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(30))
+                guard !Task.isCancelled else { break }
+
+                let targets = await ScreenCaptureService.shared.getAvailableTargets()
+                await MainActor.run {
+                    cachedScreenshotTargets = targets
+                    // Update displayed targets if palette is open and targets changed
+                    if showScreenshotPalette && targets.map(\.id) != screenshotTargets.map(\.id) {
+                        withAnimation(PaletteStyle.animation) {
+                            screenshotTargets = targets
+                        }
+                    }
                 }
             }
         }
