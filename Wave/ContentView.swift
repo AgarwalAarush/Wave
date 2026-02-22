@@ -178,7 +178,7 @@ struct ContentView: View {
         }
         .onKeyPress(characters: .init(charactersIn: "n"), phases: .down) { press in
             guard press.modifiers.contains(.command), !showModelPicker else { return .ignored }
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+            withAnimation(.easeOut(duration: 0.2)) {
                 viewModel.newChat()
             }
             inputFocused = true
